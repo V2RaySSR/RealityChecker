@@ -73,6 +73,18 @@ func (f *Formatter) FormatSingleResult(result *types.DetectionResult) string {
 			result.Location.Country, result.Location.IsDomestic))
 	}
 	
+	// SNI检测
+	if result.SNI != nil {
+		output.WriteString(fmt.Sprintf("SNI: 支持=%t, 匹配=%t, 服务器名=%s\n", 
+			result.SNI.SupportsSNI, result.SNI.SNIMatch, result.SNI.ServerName))
+	}
+	
+	// 证书检测
+	if result.Certificate != nil {
+		output.WriteString(fmt.Sprintf("证书: 有效=%t, 签发者=%s, 到期天数=%d\n", 
+			result.Certificate.Valid, result.Certificate.Issuer, result.Certificate.DaysUntilExpiry))
+	}
+	
 	// 被墙检测
 	if result.Blocked != nil {
 		output.WriteString(fmt.Sprintf("被墙: %t\n", result.Blocked.IsBlocked))
@@ -151,12 +163,22 @@ func (f *Formatter) FormatBatchResult(results []*types.DetectionResult, totalDur
 			}
 		}
 		
+		// SNI信息
+		if result.SNI != nil {
+			output.WriteString(fmt.Sprintf(", SNI匹配=%t", result.SNI.SNIMatch))
+		}
+		
+		// 证书信息
+		if result.Certificate != nil {
+			output.WriteString(fmt.Sprintf(", 证书有效=%t", result.Certificate.Valid))
+		}
+		
 		// 地理位置
 		if result.Location != nil {
 			output.WriteString(fmt.Sprintf(", 位置=%s", result.Location.Country))
 		}
 		
-		// CDN信息
+		// CDN信息（批量检测中不显示详细特征）
 		if result.CDN != nil && result.CDN.IsCDN {
 			output.WriteString(fmt.Sprintf(", CDN=%s(%s)", result.CDN.CDNProvider, result.CDN.Confidence))
 		}

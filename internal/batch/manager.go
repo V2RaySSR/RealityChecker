@@ -15,10 +15,8 @@ import (
 // Manager 批量管理器
 type Manager struct {
 	engine         *core.Engine
-	scheduler      *Scheduler
-	resultCache    *ResultCache
-	progressTracker *ProgressTracker
 	formatter      *report.Formatter
+	tableFormatter *report.TableFormatter
 	config         *types.Config
 	mu             sync.RWMutex
 	running        bool
@@ -27,17 +25,19 @@ type Manager struct {
 // NewManager 创建批量管理器
 func NewManager(config *types.Config) *Manager {
 	return &Manager{
-		config:    config,
-		formatter: report.NewFormatter(config),
+		config:         config,
+		formatter:      report.NewFormatter(config),
+		tableFormatter: report.NewTableFormatter(config),
 	}
 }
 
 // NewManagerWithEngine 使用现有引擎创建批量管理器
 func NewManagerWithEngine(engine *core.Engine, config *types.Config) *Manager {
 	return &Manager{
-		engine:    engine,
-		config:    config,
-		formatter: report.NewFormatter(config),
+		engine:         engine,
+		config:         config,
+		formatter:      report.NewFormatter(config),
+		tableFormatter: report.NewTableFormatter(config),
 	}
 }
 
@@ -58,17 +58,7 @@ func (bm *Manager) Start() error {
 		}
 	}
 
-	// 创建调度器
-	bm.scheduler = NewScheduler(bm.config)
-	if err := bm.scheduler.Start(); err != nil {
-		return fmt.Errorf("启动调度器失败: %v", err)
-	}
-
-	// 创建结果缓存
-	bm.resultCache = NewResultCache(bm.config.Cache.TTL)
-
-	// 创建进度跟踪器
-	bm.progressTracker = NewProgressTracker()
+	// 批量管理器简化：直接使用引擎，无需额外的调度器和缓存
 
 	bm.running = true
 	return nil
@@ -83,10 +73,7 @@ func (bm *Manager) Stop() error {
 		return nil
 	}
 
-	// 停止调度器
-	if bm.scheduler != nil {
-		bm.scheduler.Stop()
-	}
+	// 批量管理器简化：无需停止额外的组件
 
 	// 停止引擎
 	if bm.engine != nil {
@@ -273,7 +260,6 @@ func (bm *Manager) formatBatchReport(report *types.BatchReport) string {
 成功率: %.1f%%
 适合性率: %.1f%%
 
-详细结果:
 `,
 		formatDuration(report.TotalDuration),
 		report.Statistics.TotalDomains,
@@ -281,64 +267,28 @@ func (bm *Manager) formatBatchReport(report *types.BatchReport) string {
 		report.Summary.SuitabilityRate*100,
 	))
 	
-	// 详细结果
-	for i, domainResult := range report.Results {
-		result.WriteString(fmt.Sprintf("%d. %s: ", i+1, domainResult.Domain))
-		
-		if domainResult.Error != nil {
-			result.WriteString(fmt.Sprintf("检测失败 - %v\n", domainResult.Error))
-			continue
-		}
-		
-		if domainResult.Suitable {
-			result.WriteString("适合=true")
+	// 分离适合和不适合的域名
+	var suitableResults []*types.DetectionResult
+	var unsuitableResults []*types.DetectionResult
+	
+	for _, domainResult := range report.Results {
+		if domainResult.Suitable && domainResult.Error == nil {
+			suitableResults = append(suitableResults, domainResult)
 		} else {
-			result.WriteString("适合=false")
+			unsuitableResults = append(unsuitableResults, domainResult)
 		}
-		
-		// 网络信息
-		if domainResult.Network != nil {
-			if domainResult.Network.IsRedirected {
-				result.WriteString(fmt.Sprintf(", 重定向: %s->%s", domainResult.Domain, domainResult.Network.FinalDomain))
-			}
-			result.WriteString(fmt.Sprintf(", 状态码=%d", domainResult.Network.StatusCode))
-		}
-		
-		// TLS信息
-		if domainResult.TLS != nil {
-			result.WriteString(fmt.Sprintf(", TLS1.3=%t, X25519=%t, HTTP2=%t", 
-				domainResult.TLS.SupportsTLS13, 
-				domainResult.TLS.SupportsX25519, 
-				domainResult.TLS.SupportsHTTP2))
-			
-			// 添加TLS握手时间
-			if domainResult.TLS.HandshakeTime > 0 {
-				handshakeMs := int(domainResult.TLS.HandshakeTime.Milliseconds())
-				result.WriteString(fmt.Sprintf(", 握手时间=%dms", handshakeMs))
-			}
-		}
-		
-		// 地理位置
-		if domainResult.Location != nil {
-			result.WriteString(fmt.Sprintf(", 位置=%s", domainResult.Location.Country))
-		}
-		
-		// CDN信息
-		if domainResult.CDN != nil && domainResult.CDN.IsCDN {
-			result.WriteString(fmt.Sprintf(", CDN=%s(%s)", domainResult.CDN.CDNProvider, domainResult.CDN.Confidence))
-		}
-		
-		// 热门网站
-		if domainResult.CDN != nil && domainResult.CDN.IsHotWebsite {
-			result.WriteString(", 热门网站")
-		}
-		
-		// 被墙信息
-		if domainResult.Blocked != nil && domainResult.Blocked.IsBlocked {
-			result.WriteString(", 被墙")
-		}
-		
+	}
+	
+	// 显示适合的域名表格
+	if len(suitableResults) > 0 {
+		result.WriteString("适合的域名:\n\n")
+		result.WriteString(bm.tableFormatter.FormatSuitableTable(suitableResults))
 		result.WriteString("\n")
+	}
+	
+	// 显示不适合的域名统计
+	if len(unsuitableResults) > 0 {
+		result.WriteString(bm.tableFormatter.FormatUnsuitableSummary(unsuitableResults))
 	}
 	
 	return result.String()

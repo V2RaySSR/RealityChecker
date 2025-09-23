@@ -58,6 +58,7 @@ type CertificateResult struct {
 	CertificateSANs []string  `json:"certificate_sans"`
 	NotBefore       time.Time `json:"not_before"`
 	NotAfter        time.Time `json:"not_after"`
+	Error           string    `json:"error,omitempty"`
 }
 
 // SNIResult SNI检测结果
