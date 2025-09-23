@@ -38,10 +38,15 @@ func (ss *SNIStage) Execute(ctx *types.PipelineContext) error {
 
 // checkSNI 检查SNI支持
 func (ss *SNIStage) checkSNI(domain string) (bool, bool) {
+	const (
+		sniTimeout = 2 * time.Second  // 进一步减少SNI检测超时时间
+		sniPort    = ":443"
+	)
+	
 	// 建立TLS连接测试SNI
 	conn, err := tls.DialWithDialer(&net.Dialer{
-		Timeout: 5 * time.Second,
-	}, "tcp", domain+":443", &tls.Config{
+		Timeout: sniTimeout,
+	}, "tcp", domain+sniPort, &tls.Config{
 		ServerName: domain,
 	})
 	

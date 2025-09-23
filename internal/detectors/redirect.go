@@ -21,7 +21,7 @@ func NewRedirectStage() *RedirectStage {
 func (rs *RedirectStage) Execute(ctx *types.PipelineContext) error {
 	// 创建HTTP客户端，禁用自动重定向
 	client := &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: 5 * time.Second,  // 减少HTTP客户端超时时间
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
@@ -65,6 +65,11 @@ type RedirectResult struct {
 
 // followRedirects 跟踪重定向
 func (rs *RedirectStage) followRedirects(client *http.Client, domain string) *RedirectResult {
+	const (
+		maxRedirects = 5
+		httpsScheme  = "https://"
+	)
+	
 	result := &RedirectResult{
 		Accessible:    false,
 		StatusCode:    0,
@@ -72,11 +77,10 @@ func (rs *RedirectStage) followRedirects(client *http.Client, domain string) *Re
 		RedirectChain: []string{domain},
 		IsRedirected:  false,
 		RedirectCount: 0,
-		URL:          "https://" + domain,
+		URL:          httpsScheme + domain,
 	}
 
-	maxRedirects := 5
-	currentURL := "https://" + domain
+	currentURL := httpsScheme + domain
 
 	for i := 0; i < maxRedirects; i++ {
 		req, err := http.NewRequest("GET", currentURL, nil)
@@ -85,9 +89,15 @@ func (rs *RedirectStage) followRedirects(client *http.Client, domain string) *Re
 		}
 
 		// 添加浏览器头
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
-		req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-		req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+		const (
+			userAgent      = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+			acceptHeader   = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+			acceptLanguage = "en-US,en;q=0.9"
+		)
+		
+		req.Header.Set("User-Agent", userAgent)
+		req.Header.Set("Accept", acceptHeader)
+		req.Header.Set("Accept-Language", acceptLanguage)
 
 		resp, err := client.Do(req)
 		if err != nil {
@@ -107,15 +117,24 @@ func (rs *RedirectStage) followRedirects(client *http.Client, domain string) *Re
 		}
 
 		// 检查是否有重定向
-		if resp.StatusCode >= 300 && resp.StatusCode < 400 {
+		const (
+			redirectMin = 300
+			redirectMax = 400
+		)
+		if resp.StatusCode >= redirectMin && resp.StatusCode < redirectMax {
 			location := resp.Header.Get("Location")
 			if location != "" {
 				// 处理相对URL
-				if strings.HasPrefix(location, "/") {
+				const (
+					rootPathPrefix = "/"
+					httpPrefix     = "http"
+				)
+				
+				if strings.HasPrefix(location, rootPathPrefix) {
 					parsedURL, _ := url.Parse(currentURL)
 					location = parsedURL.Scheme + "://" + parsedURL.Host + location
-				} else if !strings.HasPrefix(location, "http") {
-					location = "https://" + location
+				} else if !strings.HasPrefix(location, httpPrefix) {
+					location = httpsScheme + location
 				}
 
 				parsedLocation, err := url.Parse(location)

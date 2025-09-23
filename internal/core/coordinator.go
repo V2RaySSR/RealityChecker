@@ -293,7 +293,14 @@ func (wp *WorkerPool) worker(id int) {
 			var err error
 			
 			// 安全执行pipeline
-			if wp.pipeline != nil {
+			if wp.pipeline == nil {
+				err = fmt.Errorf("pipeline未初始化")
+				result = &types.DetectionResult{
+					Domain:   task.Domain,
+					Error:    err,
+					Suitable: false,
+				}
+			} else {
 				defer func() {
 					if r := recover(); r != nil {
 						err = fmt.Errorf("pipeline执行panic: %v", r)
@@ -305,13 +312,6 @@ func (wp *WorkerPool) worker(id int) {
 					}
 				}()
 				result, err = wp.pipeline.Execute(wp.ctx, task.Domain)
-			} else {
-				err = fmt.Errorf("pipeline未初始化")
-				result = &types.DetectionResult{
-					Domain:   task.Domain,
-					Error:    err,
-					Suitable: false,
-				}
 			}
 			duration := time.Since(startTime)
 

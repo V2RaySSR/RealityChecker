@@ -69,9 +69,11 @@ func (cm *ConnectionManager) GetConnection(ctx context.Context, domain string) (
 
 	pool, exists := cm.connections[domain]
 	if !exists {
+		const poolMultiplier = 2 // 连接池大小倍数
+		poolSize := int(cm.config.Concurrency.MaxConcurrent) * poolMultiplier
 		pool = &ConnectionPool{
-			connections: make(chan net.Conn, cm.config.Concurrency.MaxConcurrent),
-			maxSize:     int(cm.config.Concurrency.MaxConcurrent),
+			connections: make(chan net.Conn, poolSize),
+			maxSize:     poolSize,
 			domain:      domain,
 			created:     time.Now(),
 		}
@@ -85,7 +87,8 @@ func (cm *ConnectionManager) GetConnection(ctx context.Context, domain string) (
 		return conn, nil
 	default:
 		// 创建新连接
-		conn, err := net.DialTimeout("tcp", domain+":443", cm.config.Network.Timeout)
+		const tlsPort = ":443"
+		conn, err := net.DialTimeout("tcp", domain+tlsPort, cm.config.Network.Timeout)
 		if err != nil {
 			cm.stats.FailedConnections++
 			return nil, err
@@ -144,7 +147,8 @@ func (cm *ConnectionManager) ReturnConnection(domain string, conn net.Conn) {
 
 // cleanupConnections 清理过期连接
 func (cm *ConnectionManager) cleanupConnections() {
-	ticker := time.NewTicker(5 * time.Minute)
+	const cleanupInterval = 5 * time.Minute
+	ticker := time.NewTicker(cleanupInterval)
 	defer ticker.Stop()
 
 	for range ticker.C {
@@ -284,7 +288,8 @@ func (cm *CacheManager) SetResult(domain string, result *types.DetectionResult) 
 
 // cleanupCache 清理过期缓存
 func (cm *CacheManager) cleanupCache() {
-	ticker := time.NewTicker(1 * time.Minute)
+	const cacheCleanupInterval = 1 * time.Minute
+	ticker := time.NewTicker(cacheCleanupInterval)
 	defer ticker.Stop()
 
 	for range ticker.C {

@@ -300,17 +300,17 @@ func (bm *Manager) formatBatchReport(report *types.BatchReport) string {
 
 // calculateOptimalConcurrency 计算最优并发数
 func (bm *Manager) calculateOptimalConcurrency(domainCount int) int {
-	// 保守的并发策略，适合大批量检测
+	// 更激进的并发策略，提高检测效率
 	if domainCount <= 5 {
 		return domainCount // 小批量：每个域名一个并发
 	} else if domainCount <= 20 {
-		return 3 // 中小批量：3个并发
+		return 6 // 中小批量：6个并发
 	} else if domainCount <= 50 {
-		return 4 // 中批量：4个并发
+		return 8 // 中批量：8个并发
 	} else if domainCount <= 100 {
-		return 5 // 大批量：5个并发
+		return 10 // 大批量：10个并发
 	} else {
-		return 6 // 超大批量：最多6个并发
+		return 12 // 超大批量：最多12个并发
 	}
 }
 

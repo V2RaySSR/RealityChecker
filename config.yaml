@@ -1,6 +1,6 @@
 network:
-    timeout: 30s
-    retries: 3
+    timeout: 5s
+    retries: 1
     dns_servers:
         - 8.8.8.8
         - 1.1.1.1
@@ -11,8 +11,8 @@ tls:
     servername: ""
     nextprotos: []
 concurrency:
-    max_concurrent: 8
-    check_timeout: 30s
+    max_concurrent: 12
+    check_timeout: 5s
     cache_ttl: 5m0s
 output:
     color: true
@@ -27,4 +27,4 @@ batch:
     stream_output: false
     progress_bar: true
     report_format: text
-    timeout: 1m0s
+    timeout: 30s

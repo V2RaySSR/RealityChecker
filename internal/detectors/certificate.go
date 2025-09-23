@@ -33,11 +33,17 @@ func (cs *CertificateStage) Execute(ctx *types.PipelineContext) error {
 }
 
 // checkCertificate 检查证书
+// 通过建立TLS连接获取服务器证书，验证证书的有效性和到期时间
 func (cs *CertificateStage) checkCertificate(domain string) *types.CertificateResult {
+	const (
+		certTimeout = 2 * time.Second  // 进一步减少证书检测超时时间
+		certPort    = ":443"
+	)
+	
 	// 建立TLS连接获取证书
 	conn, err := tls.DialWithDialer(&net.Dialer{
-		Timeout: 5 * time.Second,
-	}, "tcp", domain+":443", &tls.Config{
+		Timeout: certTimeout,
+	}, "tcp", domain+certPort, &tls.Config{
 		ServerName: domain,
 	})
 	

@@ -186,32 +186,18 @@ func (tf *TableFormatter) FormatUnsuitableSummary(results []*types.DetectionResu
 	buf.WriteString(fmt.Sprintf("不适合的域名 (%d个):\n", len(results)))
 	
 	// 统计各种不适合的原因
-	blockedCount := 0
-	domesticCount := 0
-	otherCount := 0
+	reasonCounts := make(map[string]int)
 	
 	for _, result := range results {
 		if result.Error != nil {
 			reason := result.Error.Error()
-			if strings.Contains(reason, "域名被墙") {
-				blockedCount++
-			} else if strings.Contains(reason, "国内网站") {
-				domesticCount++
-			} else {
-				otherCount++
-			}
+			reasonCounts[reason]++
 		}
 	}
 	
-	// 显示统计信息
-	if blockedCount > 0 {
-		buf.WriteString(fmt.Sprintf("   - %d个域名被墙\n", blockedCount))
-	}
-	if domesticCount > 0 {
-		buf.WriteString(fmt.Sprintf("   - %d个国内网站\n", domesticCount))
-	}
-	if otherCount > 0 {
-		buf.WriteString(fmt.Sprintf("   - %d个其他原因\n", otherCount))
+	// 显示统计信息，按原因分组
+	for reason, count := range reasonCounts {
+		buf.WriteString(fmt.Sprintf("   - %d个%s\n", count, reason))
 	}
 	
 	// 添加空行，与后续输出拉开距离

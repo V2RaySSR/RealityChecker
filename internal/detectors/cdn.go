@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"reality-checker-go/internal/types"
 )
@@ -63,6 +64,10 @@ func (cs *CDNStage) Execute(ctx *types.PipelineContext) error {
 }
 
 // detectCDN 检测CDN
+// 使用多种检测方法，按置信度从高到低进行检测
+// 高置信度方法：CNAME记录、HTTP响应头、ASN查询等
+// 中等置信度方法：NS记录、通用HTTP头等  
+// 低置信度方法：证书签发者等
 func (cs *CDNStage) detectCDN(domain string, networkResult *types.NetworkResult) (bool, string, string, string) {
 	// 高置信度检测方法（优先级顺序）
 	highConfidenceChecks := []func() (string, string){
@@ -241,8 +246,15 @@ func (cs *CDNStage) checkNSHintSuffix(domain string) (string, string) {
 
 // checkCertIssuerHint 检查证书签发者提示
 func (cs *CDNStage) checkCertIssuerHint(domain string) (string, string) {
+	const (
+		certPort = ":443"
+		certTimeout = 2 * time.Second  // 进一步减少CDN证书检测超时时间
+	)
+	
 	// 建立TLS连接获取证书
-	conn, err := tls.Dial("tcp", domain+":443", &tls.Config{
+	conn, err := tls.DialWithDialer(&net.Dialer{
+		Timeout: certTimeout,
+	}, "tcp", domain+certPort, &tls.Config{
 		ServerName: domain,
 	})
 	if err != nil {
