@@ -185,14 +185,6 @@ cert_issuer_hint:
   Amazon
   Google Trust Services
   Akamai
-  DigiCert
-  GlobalSign
-  Sectigo
-  Let's Encrypt
-  Buypass
-  Entrust
-  Thawte
-  GeoTrust
 
 ########################################
 # 7) 排除/降权关键字（避免误判）

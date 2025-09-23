@@ -140,9 +140,9 @@ func (tf *TableFormatter) FormatSuitableTable(results []*types.DetectionResult) 
 		var cdnText string
 		if result.CDN != nil && result.CDN.IsCDN {
 			confidence := result.CDN.Confidence
-			cdnText = text.FgCyan.Sprint(confidence)
+			cdnText = text.FgRed.Sprint(confidence)
 		} else {
-			cdnText = text.FgRed.Sprint("无")
+			cdnText = text.FgGreen.Sprint("无")
 		}
 		
 		// 热门
@@ -214,7 +214,7 @@ func (tf *TableFormatter) FormatUnsuitableSummary(results []*types.DetectionResu
 		buf.WriteString(fmt.Sprintf("   - %d个其他原因\n", otherCount))
 	}
 	
-ga	// 添加空行，与后续输出拉开距离
+	// 添加空行，与后续输出拉开距离
 	buf.WriteString("\n")
 	
 	return buf.String()
