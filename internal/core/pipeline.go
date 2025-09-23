@@ -80,7 +80,7 @@ func (p *Pipeline) Execute(ctx context.Context, domain string) (*types.Detection
 		}
 
 		// 为每个阶段设置超时
-		stageCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		stageCtx, cancel := context.WithTimeout(ctx, 8*time.Second)
 		done := make(chan error, 1)
 		
 		go func() {

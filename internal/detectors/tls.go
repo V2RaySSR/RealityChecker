@@ -100,7 +100,11 @@ func (ts *TLSStage) checkX25519Support(state tls.ConnectionState) bool {
 	// TLS 1.3 使用X25519作为密钥交换算法
 	// 在TLS 1.3中，所有密码套件都使用X25519进行密钥交换
 	if state.Version == tls.VersionTLS13 {
-		return strings.Contains(cipherName, "TLS_AES") || strings.Contains(cipherName, "X25519")
+		// TLS 1.3 的所有密码套件都使用 X25519 或 P-256
+		// 检查是否是TLS 1.3的密码套件（包括TLS_AES和TLS_CHACHA20）
+		if strings.Contains(cipherName, "TLS_AES") || strings.Contains(cipherName, "TLS_CHACHA20") {
+			return true
+		}
 	}
 	
 	// TLS 1.2 检查特定的X25519密码套件
