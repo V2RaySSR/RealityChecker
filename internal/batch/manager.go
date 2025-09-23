@@ -3,6 +3,7 @@ package batch
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -281,6 +282,9 @@ func (bm *Manager) formatBatchReport(report *types.BatchReport) string {
 	
 	// 显示适合的域名表格
 	if len(suitableResults) > 0 {
+		// 按星级排序：1星在最上面，5星在最下面
+		bm.sortByRecommendationStars(suitableResults)
+		
 		result.WriteString("适合的域名:\n\n")
 		result.WriteString(bm.tableFormatter.FormatSuitableTable(suitableResults))
 		result.WriteString("\n")
@@ -323,4 +327,53 @@ func formatDuration(d time.Duration) string {
 		seconds := int(d.Seconds()) % 60
 		return fmt.Sprintf("%dm%ds", minutes, seconds)
 	}
+}
+
+// sortByRecommendationStars 按推荐星级排序，1星在最上面，5星在最下面
+func (bm *Manager) sortByRecommendationStars(results []*types.DetectionResult) {
+	// 使用sort.Slice进行排序
+	sort.Slice(results, func(i, j int) bool {
+		starsI := bm.calculateStars(results[i])
+		starsJ := bm.calculateStars(results[j])
+		return starsI < starsJ // 升序排列：1星在前，5星在后
+	})
+}
+
+// calculateStars 计算域名的推荐星级数量
+func (bm *Manager) calculateStars(result *types.DetectionResult) int {
+	stars := 0
+	
+	// 1. TLS硬性条件检查 (TLS1.3 + X25519 + H2 + SNI匹配)
+	if result.TLS != nil && result.TLS.SupportsTLS13 && 
+	   result.TLS.SupportsX25519 && result.TLS.SupportsHTTP2 &&
+	   result.SNI != nil && result.SNI.SNIMatch {
+		stars++
+	}
+	
+	// 2. 握手时间延迟小 (<= 200ms)
+	if result.TLS != nil && result.TLS.HandshakeTime > 0 {
+		handshakeMs := int(result.TLS.HandshakeTime.Milliseconds())
+		if handshakeMs <= 200 {
+			stars++
+		}
+	}
+	
+	// 3. 没有CDN (不使用CDN更安全)
+	if result.CDN == nil || !result.CDN.IsCDN {
+		stars++
+	}
+	
+	// 4. 不是热门网站 (热门网站不推荐作为Reality目标)
+	if result.CDN != nil && !result.CDN.IsHotWebsite {
+		stars++
+	}
+	
+	// 5. 证书时间长 (>= 60天)
+	if result.Certificate != nil && result.Certificate.Valid {
+		if result.Certificate.DaysUntilExpiry >= 60 {
+			stars++
+		}
+	}
+	
+	return stars
 }

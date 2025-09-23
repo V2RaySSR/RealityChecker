@@ -36,6 +36,9 @@ func (hws *HotWebsiteStage) Execute(ctx *types.PipelineContext) error {
 		}
 	}
 
+	// 热门网站检测只是信息性的，不影响适合性判断
+	// 热门网站只是建议不推荐，但不是硬性要求
+
 	return nil
 }
 
@@ -71,7 +74,7 @@ func (hws *HotWebsiteStage) CanEarlyExit() bool {
 
 // Priority 优先级
 func (hws *HotWebsiteStage) Priority() int {
-	return 9  // 热门网站检测第九优先级 - 信息性检测
+	return 15  // 热门网站检测最后优先级 - 负面检测
 }
 
 // Name 阶段名称

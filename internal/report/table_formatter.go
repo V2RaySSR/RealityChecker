@@ -57,7 +57,7 @@ func (tf *TableFormatter) FormatSuitableTable(results []*types.DetectionResult) 
 		{Name: "证书时间", Align: text.AlignCenter},
 		{Name: "CDN", Align: text.AlignCenter},
 		{Name: "热门", Align: text.AlignCenter},
-		{Name: "推荐", Align: text.AlignCenter},
+		{Name: "推荐", Align: text.AlignLeft},
 	})
 	
 	// 添加数据行
@@ -148,13 +148,13 @@ func (tf *TableFormatter) FormatSuitableTable(results []*types.DetectionResult) 
 		// 热门
 		var hotText string
 		if result.CDN != nil && result.CDN.IsHotWebsite {
-			hotText = text.FgMagenta.Sprint("是")
+			hotText = text.FgRed.Sprint("✓")
 		} else {
 			hotText = "-"
 		}
 		
-		// 推荐
-		recommendText := text.FgYellow.Sprint("*")
+		// 推荐星级计算
+		recommendText := tf.calculateRecommendationStars(result)
 		
 		// 添加行数据
 		t.AppendRow(table.Row{
@@ -214,5 +214,53 @@ func (tf *TableFormatter) FormatUnsuitableSummary(results []*types.DetectionResu
 		buf.WriteString(fmt.Sprintf("   - %d个其他原因\n", otherCount))
 	}
 	
+ga	// 添加空行，与后续输出拉开距离
+	buf.WriteString("\n")
+	
 	return buf.String()
+}
+
+// calculateRecommendationStars 计算推荐星级
+func (tf *TableFormatter) calculateRecommendationStars(result *types.DetectionResult) string {
+	stars := 0
+	
+	// 1. TLS硬性条件检查 (TLS1.3 + X25519 + H2 + SNI匹配)
+	if result.TLS != nil && result.TLS.SupportsTLS13 && 
+	   result.TLS.SupportsX25519 && result.TLS.SupportsHTTP2 &&
+	   result.SNI != nil && result.SNI.SNIMatch {
+		stars++
+	}
+	
+	// 2. 握手时间延迟小 (<= 200ms)
+	if result.TLS != nil && result.TLS.HandshakeTime > 0 {
+		handshakeMs := int(result.TLS.HandshakeTime.Milliseconds())
+		if handshakeMs <= 200 {
+			stars++
+		}
+	}
+	
+	// 3. 没有CDN (不使用CDN更安全)
+	if result.CDN == nil || !result.CDN.IsCDN {
+		stars++
+	}
+	
+	// 4. 不是热门网站 (热门网站不推荐作为Reality目标)
+	if result.CDN != nil && !result.CDN.IsHotWebsite {
+		stars++
+	}
+	
+	// 5. 证书时间长 (>= 60天)
+	if result.Certificate != nil && result.Certificate.Valid {
+		if result.Certificate.DaysUntilExpiry >= 60 {
+			stars++
+		}
+	}
+	
+	// 生成星级显示 - 只显示实际获得的星级
+	var starsText string
+	for i := 0; i < stars; i++ {
+		starsText += text.FgYellow.Sprint("*")
+	}
+	
+	return starsText
 }

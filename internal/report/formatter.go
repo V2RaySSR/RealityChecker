@@ -24,83 +24,19 @@ func NewFormatter(config *types.Config) *Formatter {
 func (f *Formatter) FormatSingleResult(result *types.DetectionResult) string {
 	var output strings.Builder
 	
-	// 基本信息
-	output.WriteString(fmt.Sprintf("域名: %s\n", result.Domain))
-	output.WriteString(fmt.Sprintf("适合性: %t\n", result.Suitable))
+	// 使用表格格式化器，和批量检测保持一致的格式
+	tableFormatter := NewTableFormatter(f.config)
 	
-	// 耗时
-	durationSeconds := int(result.Duration.Seconds())
-	output.WriteString(fmt.Sprintf("耗时: %ds\n", durationSeconds))
+	// 显示域名检测结果表格（无论适合与否）
+	output.WriteString("检测结果:\n\n")
+	output.WriteString(tableFormatter.FormatSuitableTable([]*types.DetectionResult{result}))
+	output.WriteString("\n")
 	
-	// 错误信息
-	if result.Error != nil {
-		output.WriteString(fmt.Sprintf("错误: %v\n", result.Error))
-	}
-	
-	// 网络信息
-	if result.Network != nil {
-		output.WriteString(fmt.Sprintf("网络: 可达=%t, 状态码=%d\n", 
-			result.Network.Accessible, result.Network.StatusCode))
-		
-		if result.Network.IsRedirected {
-			output.WriteString(fmt.Sprintf("重定向: %s -> %s (跳转%d次)\n", 
-				result.Domain, result.Network.FinalDomain, result.Network.RedirectCount))
-			if len(result.Network.RedirectChain) > 1 {
-				output.WriteString(fmt.Sprintf("重定向链: %s\n", 
-					strings.Join(result.Network.RedirectChain, " -> ")))
-			}
-		} else {
-			output.WriteString(fmt.Sprintf("最终域名: %s\n", result.Network.FinalDomain))
-		}
-	}
-	
-	// TLS信息
-	if result.TLS != nil {
-		tlsInfo := fmt.Sprintf("TLS: 1.3=%t, X25519=%t, HTTP2=%t", 
-			result.TLS.SupportsTLS13, result.TLS.SupportsX25519, result.TLS.SupportsHTTP2)
-		
-		if result.TLS.HandshakeTime > 0 {
-			handshakeMs := int(result.TLS.HandshakeTime.Milliseconds())
-			tlsInfo += fmt.Sprintf(", 握手时间=%dms", handshakeMs)
-		}
-		
-		output.WriteString(fmt.Sprintf("%s\n", tlsInfo))
-	}
-	
-	// 地理位置
-	if result.Location != nil {
-		output.WriteString(fmt.Sprintf("地理位置: %s, 国内=%t\n", 
-			result.Location.Country, result.Location.IsDomestic))
-	}
-	
-	// SNI检测
-	if result.SNI != nil {
-		output.WriteString(fmt.Sprintf("SNI: 支持=%t, 匹配=%t, 服务器名=%s\n", 
-			result.SNI.SupportsSNI, result.SNI.SNIMatch, result.SNI.ServerName))
-	}
-	
-	// 证书检测
-	if result.Certificate != nil {
-		output.WriteString(fmt.Sprintf("证书: 有效=%t, 签发者=%s, 到期天数=%d\n", 
-			result.Certificate.Valid, result.Certificate.Issuer, result.Certificate.DaysUntilExpiry))
-	}
-	
-	// 被墙检测
-	if result.Blocked != nil {
-		output.WriteString(fmt.Sprintf("被墙: %t\n", result.Blocked.IsBlocked))
-	}
-	
-	// CDN信息
-	if result.CDN != nil {
-		if result.CDN.IsCDN {
-			output.WriteString(fmt.Sprintf("CDN: 是, 提供商=%s, 置信度=%s, 证据=%s\n", 
-				result.CDN.CDNProvider, result.CDN.Confidence, result.CDN.Evidence))
-		} else {
-			output.WriteString("CDN: 否\n")
-		}
-		if result.CDN.IsHotWebsite {
-			output.WriteString("热门网站: 是\n")
-		}
+	// 如果不适合，显示不适合的原因
+	if !result.Suitable || result.Error != nil {
+		var unsuitableResults []*types.DetectionResult
+		unsuitableResults = append(unsuitableResults, result)
+		output.WriteString(tableFormatter.FormatUnsuitableSummary(unsuitableResults))
 	}
 	
 	return output.String()
