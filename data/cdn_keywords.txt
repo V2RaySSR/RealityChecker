@@ -1,0 +1,225 @@
+# CDN检测关键词库
+# 目标：高精度、低误判的CDN检测（适用于Reality目标站筛选）
+# 核心原则：宁缺勿误判 - 宁可漏检也不要误判
+
+########################################
+# 1) 强特征：CNAME / Hostname 专属后缀
+########################################
+cname_strong_suffix:
+  cloudfront.net
+  akamaized.net
+  akamaihd.net
+  akamaiedge.net
+  edgesuite.net
+  edgekey.net
+  fastly.net
+  fastlylb.net
+  azureedge.net
+  azurefd.net
+  msecnd.net
+  edgecastcdn.net
+  stackpathcdn.com
+  stackpathdns.com
+  kxcdn.com           # KeyCDN
+  b-cdn.net          # BunnyCDN
+  cdn77.org          # CDN77
+  cachefly.net
+  hwcdn.net          # Highwinds/Edgio
+  llnwd.net          # Limelight/Edgio
+  llnwi.net
+  gcdn.co            # Gcore
+  cdn.cloudflare.net # Cloudflare
+  akadns.net         # Akamai DNS
+  cdnetworks.net
+  cdnetworks.com
+  incapdns.net       # Imperva/Incapsula
+  impervadns.net
+  vercel-dns.com     # Vercel 自定义域 CNAME 目标
+  netlify.app        # Netlify 部分场景
+  quic.cloud         # LiteSpeed CDN
+  cdnvideo.ru
+  voxcdn.net
+  # 知名网站专用CDN
+  frontends-cloudflare.uber.com
+  tesla.com.edgekey.net
+
+########################################
+# 2) 强特征：HTTP 专属响应头（供应商特有）
+########################################
+http_strong_header:
+  cf-ray
+  cf-cache-status
+  cf-connecting-ip
+  x-amz-cf-id
+  x-amz-cf-pop
+  x-amz-cf-ray
+  x-fastly-request-id
+  fastly-debug
+  x-akamai-pragma
+  x-akamai-request-id
+  x-akamai-transformed
+  x-azure-ref
+  x-gcdn-request-id
+  x-iinfo                  # Imperva/Incapsula
+  x-pantheon-styx-hostname # Pantheon CDN
+  x-styx-req-id
+  x-timer
+  server: cloudflare
+  server: cloudfront
+  server: AkamaiGHost
+  server: Fastly
+  server: Edgecast
+  server: envoy
+  server: ESF
+  server: GSE
+  server: gws
+  server: sffe
+
+# 中等 HTTP 头（需与强特征组合使用，不可独立判定）
+http_medium_header:
+  x-cache
+  x-cache-hits
+  x-cache-lookup
+  x-served-by
+  x-varnish
+  x-envoy-upstream-service-time
+  age
+  via
+  edge-control
+
+########################################
+# 3) HTTP头值中的CDN特征（CSP、CORS等头中包含的CDN域名）
+########################################
+http_value_cdn_domains:
+  # Apple CDN
+  akamaized.net
+  cdn-apple.com
+  apple-dns.net
+  
+  # Amazon CloudFront
+  cloudfront.net
+  d3g5sx9ubyikz5.cloudfront.net
+  d2c8v52ll5s99t.cloudfront.net
+  
+  # Fastly
+  fastly.net
+  fastlylb.net
+  
+  # GitHub CDN
+  github.githubassets.com
+  github.com/assets-cdn
+  github-cloud.s3.amazonaws.com
+  githubusercontent.com
+  raw.githubusercontent.com
+  
+  # Microsoft Azure
+  azureedge.net
+  azurefd.net
+  azurestaticapps.net
+  
+  # Google CDN
+  googleusercontent.com
+  googleapis.com
+  ajax.googleapis.com
+  fonts.googleapis.com
+  fonts.gstatic.com
+  gstatic.com
+  google.com/static
+  
+  # Cloudflare
+  cdnjs.cloudflare.com
+  cdnjs.com
+  cloudflare.com
+  
+  # 其他CDN
+  jsdelivr.net
+  unpkg.com
+  cdn.sstatic.net
+  
+  # 大站专用CDN域名
+  fbcdn.net
+  facebook.com/rsrc.php
+  instagram.com/static
+  twitter.com/i/web
+  linkedin.com/static
+  pinterest.com/static
+  reddit.com/static
+  youtube.com/static
+  netflix.com/static
+  spotify.com/static
+  discord.com/assets
+  twitch.tv/static
+
+########################################
+# 4) 强特征：ASN（仅列高置信的 CDN 自有 ASN）
+########################################
+asn_strong_exact:
+  AS13335   # Cloudflare
+  AS54113   # Fastly
+  AS20940   # Akamai
+  AS15133   # EdgeCast / Verizon Media
+  AS22822   # Edgio / Limelight
+  AS60068   # CDN77 / DataCamp
+  AS199524  # Gcore
+  AS19551   # Imperva / Incapsula
+  AS20446   # Highwinds / Edgio (视地区留意)
+
+########################################
+# 5) NS 提示（弱信号，仅作旁证）
+########################################
+ns_hint_suffix:
+  ns.cloudflare.com
+  akam.net
+  fastlydns.net
+  vercel-dns.com
+  stackpathdns.com
+  gcorelabs.net
+  gcdn.co
+  awsdns
+
+########################################
+# 6) 证书签发者（弱/中等提示，不参与最终结论）
+########################################
+cert_issuer_hint:
+  Cloudflare Inc
+  Amazon
+  Google Trust Services
+  Akamai
+  DigiCert
+  GlobalSign
+  Sectigo
+  Let's Encrypt
+  Buypass
+  Entrust
+  Thawte
+  GeoTrust
+
+########################################
+# 7) 排除/降权关键字（避免误判）
+########################################
+exclude_server_tokens:
+  nginx
+  openresty
+  apache
+  httpd
+  iis
+  litespeed
+  caddy
+  tengine
+  envoy
+  squid
+  varnish
+  ats
+
+exclude_keywords_generic:
+  cdn
+  edge
+  cache
+  static
+  assets
+  media
+  server
+  proxy
+  balancer
+
+########################################

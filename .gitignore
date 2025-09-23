@@ -1,0 +1,24 @@
+# 编译产物
+reality-checker
+reality-checker-*
+
+# 数据文件（太大，需要单独下载）
+data/Country.mmdb
+data/cdncheck
+
+# 备份文件
+*.backup
+*backup*
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 日志文件
+*.log
+
+# 临时文件
+*.tmp
+*.temp
