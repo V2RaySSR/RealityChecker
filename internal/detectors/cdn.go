@@ -248,7 +248,7 @@ func (cs *CDNStage) checkNSHintSuffix(domain string) (string, string) {
 func (cs *CDNStage) checkCertIssuerHint(domain string) (string, string) {
 	const (
 		certPort = ":443"
-		certTimeout = 5 * time.Second  // 增加CDN证书检测超时时间，减少误判
+		certTimeout = 6 * time.Second  // 进一步增加CDN证书检测超时时间，减少误判
 	)
 	
 	// 建立TLS连接获取证书

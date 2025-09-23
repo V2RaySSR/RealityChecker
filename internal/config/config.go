@@ -61,17 +61,17 @@ func SaveConfig(config *types.Config, configPath string) error {
 func getDefaultConfig() *types.Config {
 	return &types.Config{
 		Network: types.NetworkConfig{
-			Timeout:    30 * time.Second,
-			Retries:    3,
-			DNSServers: []string{"8.8.8.8", "1.1.1.1"},
+			Timeout:    5 * time.Second,  // 与config.yaml一致
+			Retries:    1,                // 与config.yaml一致
+			DNSServers: []string{"114.114.114.114", "223.5.5.5"}, // 使用国内DNS
 		},
 		TLS: types.TLSConfig{
 			MinVersion: 771, // TLS 1.2
 			MaxVersion: 772, // TLS 1.3
 		},
 		Concurrency: types.ConcurrencyConfig{
-			MaxConcurrent: 8,
-			CheckTimeout:  30 * time.Second,
+			MaxConcurrent: 8,              // 与config.yaml一致，适合VPS
+			CheckTimeout:  5 * time.Second, // 与config.yaml一致
 			CacheTTL:      5 * time.Minute,
 		},
 		Output: types.OutputConfig{
@@ -89,7 +89,7 @@ func getDefaultConfig() *types.Config {
 			StreamOutput: false,
 			ProgressBar:  true,
 			ReportFormat: "text",
-			Timeout:      60 * time.Second,
+			Timeout:      30 * time.Second, // 与config.yaml一致
 		},
 	}
 }

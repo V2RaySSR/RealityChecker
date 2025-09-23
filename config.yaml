@@ -2,8 +2,8 @@ network:
     timeout: 5s
     retries: 1
     dns_servers:
-        - 8.8.8.8
-        - 1.1.1.1
+        - 114.114.114.114
+        - 223.5.5.5
 tls:
     minversion: 771
     maxversion: 772
@@ -11,7 +11,7 @@ tls:
     servername: ""
     nextprotos: []
 concurrency:
-    max_concurrent: 12
+    max_concurrent: 8
     check_timeout: 5s
     cache_ttl: 5m0s
 output:
