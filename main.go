@@ -11,6 +11,7 @@ import (
 	"reality-checker-go/internal/batch"
 	"reality-checker-go/internal/config"
 	"reality-checker-go/internal/core"
+	"reality-checker-go/internal/report"
 )
 
 func main() {
@@ -29,8 +30,8 @@ func main() {
 	}
 	defer engine.Stop()
 
-	// 创建批量管理器
-	batchManager := batch.NewManager(cfg)
+	// 创建批量管理器（共享引擎）
+	batchManager := batch.NewManagerWithEngine(engine, cfg)
 	if err := batchManager.Start(); err != nil {
 		fmt.Printf("启动批量管理器失败: %v\n", err)
 		os.Exit(1)
@@ -84,63 +85,10 @@ func checkSingle(ctx context.Context, engine *core.Engine, domain string) {
 		return
 	}
 
-	// 打印结果
-	fmt.Printf("\n检测结果:\n")
-	fmt.Printf("域名: %s\n", result.Domain)
-	fmt.Printf("适合性: %t\n", result.Suitable)
-	durationSeconds := int(result.Duration.Seconds())
-	fmt.Printf("耗时: %ds\n", durationSeconds)
-	
-	if result.Error != nil {
-		fmt.Printf("错误: %v\n", result.Error)
-	}
-
-	if result.Network != nil {
-		fmt.Printf("网络: 可达=%t, 状态码=%d\n", 
-			result.Network.Accessible, result.Network.StatusCode)
-		if result.Network.IsRedirected {
-			fmt.Printf("重定向: %s -> %s (跳转%d次)\n", 
-				result.Domain, result.Network.FinalDomain, result.Network.RedirectCount)
-			if len(result.Network.RedirectChain) > 1 {
-				fmt.Printf("重定向链: %s\n", strings.Join(result.Network.RedirectChain, " -> "))
-			}
-		} else {
-			fmt.Printf("最终域名: %s\n", result.Network.FinalDomain)
-		}
-	}
-
-	if result.TLS != nil {
-		tlsInfo := fmt.Sprintf("TLS: 1.3=%t, X25519=%t, HTTP2=%t", 
-			result.TLS.SupportsTLS13, result.TLS.SupportsX25519, result.TLS.SupportsHTTP2)
-		
-		// 添加握手时间
-		if result.TLS.HandshakeTime > 0 {
-			handshakeMs := int(result.TLS.HandshakeTime.Milliseconds())
-			tlsInfo += fmt.Sprintf(", 握手时间=%dms", handshakeMs)
-		}
-		
-		fmt.Printf("%s\n", tlsInfo)
-	}
-
-	if result.Location != nil {
-		fmt.Printf("地理位置: %s, 国内=%t\n", result.Location.Country, result.Location.IsDomestic)
-	}
-
-	if result.Blocked != nil {
-		fmt.Printf("被墙: %t\n", result.Blocked.IsBlocked)
-	}
-
-	if result.CDN != nil {
-		if result.CDN.IsCDN {
-			fmt.Printf("CDN: 是, 提供商=%s, 置信度=%s, 证据=%s\n", 
-				result.CDN.CDNProvider, result.CDN.Confidence, result.CDN.Evidence)
-		} else {
-			fmt.Printf("CDN: 否\n")
-		}
-		if result.CDN.IsHotWebsite {
-			fmt.Printf("热门网站: 是\n")
-		}
-	}
+	// 使用格式化器输出结果
+	cfg, _ := config.LoadConfig("")
+	formatter := report.NewFormatter(cfg)
+	fmt.Printf("\n%s", formatter.FormatSingleResult(result))
 }
 
 // checkBatch 批量检测域名

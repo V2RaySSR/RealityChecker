@@ -37,12 +37,12 @@ func (ts *TLSStage) Execute(ctx *types.PipelineContext) error {
 func (ts *TLSStage) performTLSHandshake(domain string) *types.TLSResult {
 	startTime := time.Now()
 	
-	// 建立TLS连接
+	// 直接建立TLS连接（简化版本，避免依赖连接管理器）
 	conn, err := tls.DialWithDialer(&net.Dialer{
 		Timeout: 10 * time.Second,
 	}, "tcp", domain+":443", &tls.Config{
 		ServerName: domain,
-		NextProtos: []string{"h2", "http/1.1"}, // 支持HTTP/2
+		NextProtos: []string{"h2", "http/1.1"},
 	})
 	
 	handshakeTime := time.Since(startTime)
@@ -65,19 +65,11 @@ func (ts *TLSStage) performTLSHandshake(domain string) *types.TLSResult {
 	// 检查TLS版本
 	supportsTLS13 := state.Version == tls.VersionTLS13
 	
-	// 检查密码套件
-	supportsX25519 := false
-	if state.CipherSuite != 0 {
-		cipherName := tls.CipherSuiteName(state.CipherSuite)
-		supportsX25519 = strings.Contains(strings.ToUpper(cipherName), "X25519") ||
-			strings.Contains(strings.ToUpper(cipherName), "TLS_AES")
-	}
+	// 检查密码套件（优化X25519检测）
+	supportsX25519 := ts.checkX25519Support(state)
 	
 	// 检查HTTP/2支持
-	supportsHTTP2 := false
-	if state.NegotiatedProtocol != "" && state.NegotiatedProtocol == "h2" {
-		supportsHTTP2 = true
-	}
+	supportsHTTP2 := state.NegotiatedProtocol == "h2"
 
 	return &types.TLSResult{
 		ProtocolVersion: fmt.Sprintf("TLS %d.%d", (state.Version>>8)&0xFF, state.Version&0xFF),
@@ -87,6 +79,23 @@ func (ts *TLSStage) performTLSHandshake(domain string) *types.TLSResult {
 		CipherSuite:     tls.CipherSuiteName(state.CipherSuite),
 		HandshakeTime:   handshakeTime,
 	}
+}
+
+// checkX25519Support 检查X25519支持
+func (ts *TLSStage) checkX25519Support(state tls.ConnectionState) bool {
+	if state.CipherSuite == 0 {
+		return false
+	}
+	
+	cipherName := strings.ToUpper(tls.CipherSuiteName(state.CipherSuite))
+	
+	// TLS 1.3 使用X25519作为密钥交换
+	if state.Version == tls.VersionTLS13 {
+		return strings.Contains(cipherName, "TLS_AES") || strings.Contains(cipherName, "X25519")
+	}
+	
+	// TLS 1.2 检查特定的X25519密码套件
+	return strings.Contains(cipherName, "X25519")
 }
 
 // CanEarlyExit 是否可以早期退出

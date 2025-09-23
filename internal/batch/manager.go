@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"reality-checker-go/internal/core"
+	"reality-checker-go/internal/report"
 	"reality-checker-go/internal/types"
 )
 
@@ -17,6 +18,7 @@ type Manager struct {
 	scheduler      *Scheduler
 	resultCache    *ResultCache
 	progressTracker *ProgressTracker
+	formatter      *report.Formatter
 	config         *types.Config
 	mu             sync.RWMutex
 	running        bool
@@ -25,7 +27,17 @@ type Manager struct {
 // NewManager 创建批量管理器
 func NewManager(config *types.Config) *Manager {
 	return &Manager{
-		config: config,
+		config:    config,
+		formatter: report.NewFormatter(config),
+	}
+}
+
+// NewManagerWithEngine 使用现有引擎创建批量管理器
+func NewManagerWithEngine(engine *core.Engine, config *types.Config) *Manager {
+	return &Manager{
+		engine:    engine,
+		config:    config,
+		formatter: report.NewFormatter(config),
 	}
 }
 
@@ -38,10 +50,12 @@ func (bm *Manager) Start() error {
 		return fmt.Errorf("批量管理器已在运行")
 	}
 
-	// 创建引擎
-	bm.engine = core.NewEngine(bm.config)
-	if err := bm.engine.Start(); err != nil {
-		return fmt.Errorf("启动引擎失败: %v", err)
+	// 如果没有引擎，创建新引擎
+	if bm.engine == nil {
+		bm.engine = core.NewEngine(bm.config)
+		if err := bm.engine.Start(); err != nil {
+			return fmt.Errorf("启动引擎失败: %v", err)
+		}
 	}
 
 	// 创建调度器
