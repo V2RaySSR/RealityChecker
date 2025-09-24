@@ -38,3 +38,6 @@ vendor/
 
 # 配置文件（可选）
 config.yaml
+.gitignore
+data/Country.mmdb
+data/gfwlist.conf
