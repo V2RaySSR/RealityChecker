@@ -20,38 +20,41 @@
 
 ### 系统要求
 
-* **Go 1.21+** - 用于编译和运行
-* **Linux/macOS/Windows** - 跨平台支持
+* **Linux VPS** - 主要针对VPS环境使用
+* **Go 1.21+** - 用于本地编译（可选）
 
 ### 安装步骤
 
-**1. 克隆项目：**
+**方法1：直接下载（推荐）**
+
+从 [Releases](https://github.com/V2RaySSR/RealityChecker/releases) 页面下载对应架构的zip文件：
+- `reality-checker-linux-amd64.zip` - Linux x86_64
+- `reality-checker-linux-arm64.zip` - Linux ARM64
+
+解压后直接使用：
+```bash
+# 解压
+unzip reality-checker-linux-amd64.zip
+
+# 添加执行权限
+chmod +x reality-checker
+
+# 开始检测
+./reality-checker check <域名>
+```
+
+**方法2：本地编译**
 
 ```bash
+# 克隆项目
 git clone https://github.com/V2RaySSR/RealityChecker.git
 cd RealityChecker
-```
 
-**2. 编译程序：**
-
-```bash
+# 编译程序
 go build -o reality-checker
-```
 
-**3. 开始检测：**
-
-```bash
-# 单域名检测
+# 开始检测
 ./reality-checker check <域名>
-
-# 批量检测
-./reality-checker batch "域名1,域名2,域名3"
-
-# CSV文件检测
-./reality-checker csv <csv文件>
-
-# 查看帮助
-./reality-checker
 ```
 
 ## 🔍 使用示例

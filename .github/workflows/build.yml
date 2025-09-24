@@ -65,28 +65,6 @@ jobs:
         zip -j dist/reality-checker-linux-arm64.zip reality-checker
         rm reality-checker
         
-        # Windows AMD64
-        GOOS=windows GOARCH=amd64 go build -ldflags "$LDFLAGS" -o reality-checker.exe .
-        zip -j dist/reality-checker-windows-amd64.zip reality-checker.exe
-        rm reality-checker.exe
-        
-        # Windows ARM64
-        GOOS=windows GOARCH=arm64 go build -ldflags "$LDFLAGS" -o reality-checker.exe .
-        zip -j dist/reality-checker-windows-arm64.zip reality-checker.exe
-        rm reality-checker.exe
-        
-        # macOS AMD64
-        GOOS=darwin GOARCH=amd64 go build -ldflags "$LDFLAGS" -o reality-checker .
-        chmod +x reality-checker
-        zip -j dist/reality-checker-macos-amd64.zip reality-checker
-        rm reality-checker
-        
-        # macOS ARM64 (Apple Silicon)
-        GOOS=darwin GOARCH=arm64 go build -ldflags "$LDFLAGS" -o reality-checker .
-        chmod +x reality-checker
-        zip -j dist/reality-checker-macos-arm64.zip reality-checker
-        rm reality-checker
-        
         # 显示构建结果
         ls -la dist/
         
@@ -102,6 +80,10 @@ jobs:
           ### 使用方法
           
           详细使用方法请参考 [README.md](https://github.com/V2RaySSR/RealityChecker/blob/main/README.md)
+          
+          **下载说明：**
+          - `reality-checker-linux-amd64.zip` - Linux x86_64
+          - `reality-checker-linux-arm64.zip` - Linux ARM64
           
           **基本命令：**
           ```bash

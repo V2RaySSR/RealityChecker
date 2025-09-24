@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"RealityChecker/internal/version"
 )
 
 // GitHubRelease GitHub发布信息结构
@@ -16,7 +18,7 @@ type GitHubRelease struct {
 
 // PrintUsage 打印使用说明
 func PrintUsage() {
-	fmt.Printf("Reality协议目标网站检测器 %s\n\n", "v2.0")
+	fmt.Printf("Reality协议目标网站检测器 %s\n\n", version.GetVersion())
 	fmt.Println("用法:")
 	fmt.Println("  reality-checker check <domain>          检测单个域名")
 	fmt.Println("  reality-checker batch <domain1,domain2,...>  批量检测域名")
@@ -78,7 +80,7 @@ func getLatestVersion() string {
 
 // getVersionInfo 获取版本信息字符串
 func getVersionInfo() string {
-	const currentVersion = "v2.1.0" // 当前程序版本
+	currentVersion := version.GetVersion() // 使用动态版本号
 
 	latestVersion := getLatestVersion()
 
