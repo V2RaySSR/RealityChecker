@@ -47,7 +47,19 @@ func (hws *HotWebsiteStage) detectHotWebsite(domain string) bool {
 	domain = strings.ToLower(domain)
 	
 	// 检查是否为热门网站
-	return hws.hotWebsites[domain]
+	if hws.hotWebsites[domain] {
+		return true
+	}
+	
+	// 如果域名以www.开头，也检查去掉www.的版本
+	if strings.HasPrefix(domain, "www.") {
+		domainWithoutWWW := domain[4:]
+		return hws.hotWebsites[domainWithoutWWW]
+	}
+	
+	// 如果域名不以www.开头，也检查加上www.的版本
+	domainWithWWW := "www." + domain
+	return hws.hotWebsites[domainWithWWW]
 }
 
 // loadHotWebsites 加载热门网站列表

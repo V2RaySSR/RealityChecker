@@ -20,9 +20,7 @@ func (r *RootCmd) executeBatch(domainsStr string) {
 		return
 	}
 
-	ui.PrintBanner()
-	
-	// 显示重复域名警告（在横幅下面）
+	// 显示重复域名警告
 	if len(duplicateDomains) > 0 {
 		ui.PrintTimestampedMessage("警告：发现 %d 个重复域名，已去重：", len(duplicateDomains))
 		

@@ -77,7 +77,6 @@ func (r *RootCmd) executeCSV(csvFile string) {
 		fmt.Printf("  ... 还有 %d 个域名\n", len(domains)-previewCount)
 	}
 	fmt.Println("")
-	ui.PrintBanner()
 	ui.PrintTimestampedMessage("开始批量检测...")
 	
 	_, err = r.batchManager.CheckDomains(r.ctx, domains)

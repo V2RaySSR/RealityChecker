@@ -31,8 +31,17 @@ func NewDownloader() *Downloader {
 	}
 }
 
+// printTimestampedMessage 打印带时间戳的消息
+func printTimestampedMessage(format string, args ...interface{}) {
+	timestamp := time.Now().Format("15:04:05")
+	message := fmt.Sprintf(format, args...)
+	fmt.Printf("[%s] %s\n", timestamp, message)
+}
+
 // EnsureDataFiles 确保所有数据文件存在且最新
 func (d *Downloader) EnsureDataFiles() error {
+	printTimestampedMessage("检查数据文件...")
+	
 	// 定义需要下载的文件
 	files := []DataFile{
 		{
@@ -69,6 +78,7 @@ func (d *Downloader) EnsureDataFiles() error {
 		}
 	}
 
+	printTimestampedMessage("数据文件检查完成。")
 	return nil
 }
 
@@ -82,6 +92,7 @@ func (d *Downloader) ensureFile(file DataFile) error {
 
 	// 如果文件不存在，直接下载
 	if !exists {
+		printTimestampedMessage("下载 %s...", file.Name)
 		return d.downloadWithRetry(file)
 	}
 
@@ -93,6 +104,7 @@ func (d *Downloader) ensureFile(file DataFile) error {
 
 	// 如果需要更新，下载新文件
 	if needsUpdate {
+		printTimestampedMessage("更新 %s...", file.Name)
 		return d.downloadWithRetry(file)
 	}
 

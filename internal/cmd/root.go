@@ -110,8 +110,6 @@ func (r *RootCmd) Execute() {
 		fmt.Printf("错误：未知命令 '%s'\n", os.Args[1])
 		fmt.Println("可用命令: check, batch, csv, version")
 		fmt.Println()
-		ui.PrintUsage()
-		fmt.Println()
 		os.Exit(1)
 	}
 }

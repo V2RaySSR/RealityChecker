@@ -28,7 +28,6 @@ func (r *RootCmd) executeCheck(domain string) {
 		return
 	}
 	
-	ui.PrintBanner()
 	ui.PrintTimestampedMessage("开始检测域名: %s", domain)
 	
 	result, err := r.engine.CheckDomain(r.ctx, domain)
