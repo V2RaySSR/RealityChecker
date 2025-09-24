@@ -54,28 +54,6 @@ go build -o reality-checker
 ./reality-checker
 ```
 
-## 📝 检测标准
-
-### 推荐使用的网站特征
-
-* ✅ 海外网站（非国内IP）
-* ✅ 支持TLS 1.3协议
-* ✅ 支持X25519加密算法
-* ✅ 证书SNI匹配正确
-* ✅ 未使用CDN
-* ✅ 非热门网站
-* ✅ 未被墙
-
-### 不推荐使用的网站特征
-
-* ❌ 国内网站
-* ❌ 不支持TLS 1.3
-* ❌ 不支持X25519
-* ❌ 证书SNI不匹配
-* ❌ 使用CDN
-* ❌ 热门网站
-* ❌ 被墙网站
-
 ## 🔍 使用示例
 
 ### 单域名检测
@@ -155,6 +133,28 @@ curl -I https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/hot_
 - [gfwlist.conf](https://raw.githubusercontent.com/Loyalsoldier/clash-rules/release/gfw.txt)
 - [cdn_keywords.txt](https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/cdn_keywords.txt)
 - [hot_websites.txt](https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/hot_websites.txt)
+
+## 📝 检测标准
+
+### 推荐使用的网站特征
+
+* ✅ 海外网站（非国内IP）
+* ✅ 支持TLS 1.3协议
+* ✅ 支持X25519加密算法
+* ✅ 证书SNI匹配正确
+* ✅ 未使用CDN
+* ✅ 非热门网站
+* ✅ 未被墙
+
+### 不推荐使用的网站特征
+
+* ❌ 国内网站
+* ❌ 不支持TLS 1.3
+* ❌ 不支持X25519
+* ❌ 证书SNI不匹配
+* ❌ 使用CDN
+* ❌ 热门网站
+* ❌ 被墙网站
 
 ## 🤝 贡献指南
 
