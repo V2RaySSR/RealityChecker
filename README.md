@@ -2,7 +2,7 @@
 
 一个专业的Reality协议目标网站检测工具，用于评估网站是否适合作为Reality协议的目标域名。
 
-**版本**: v2.1.0 | [V2RaySSR综合网](https://v2rayssr.com)
+[V2RaySSR综合网](https://v2rayssr.com)
 
 ## ✨ 功能特性
 
