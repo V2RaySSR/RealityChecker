@@ -1,7 +1,0 @@
----
-description:
-globs:
-alwaysApply: true
----
-不要没有意义的注释。
-打印中不要使用图标，很多VPS不支持
