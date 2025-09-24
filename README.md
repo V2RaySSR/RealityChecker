@@ -70,8 +70,6 @@ go build -o reality-checker
 ./reality-checker batch "apple.com,tesla.com,microsoft.com"
 ```
 
-**推荐工作流程**: 对于大量域名检测，建议先使用 [RealiTLScanner](https://github.com/XTLS/RealiTLScanner) 进行初步扫描，生成 `domains.csv` 文件，然后使用本工具进行深度检测。
-
 ### CSV文件检测
 
 ```bash
@@ -79,13 +77,28 @@ go build -o reality-checker
 ./reality-checker csv domains.csv
 ```
 
-**注意**: 对于多域名检测，建议配合使用 [RealiTLScanner](https://github.com/XTLS/RealiTLScanner) 工具。该工具可以扫描大量域名并生成 `domains.csv` 文件，然后使用本工具进行详细的Reality协议适合性检测。
+### 推荐工作流程
+
+对于大量域名检测，建议配合使用 [RealiTLScanner](https://github.com/XTLS/RealiTLScanner) 工具：
+
+**1. 使用RealiTLScanner扫描VPS IP：**
+```bash
+./RealiTLScanner -addr <VPS IP> -port 443 -thread 50 -timeout 5 -out file.csv
+```
+
+**2. 使用本工具检测生成的CSV文件：**
+```bash
+./reality-checker csv file.csv
+```
 
 ### 查看帮助
 
 ```bash
 # 显示使用说明
 ./reality-checker
+
+# 查看版本信息
+./reality-checker version
 ```
 
 ## ⚡ 性能特性

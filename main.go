@@ -8,18 +8,6 @@ import (
 	"RealityChecker/internal/data"
 )
 
-// 版本信息，由构建时注入
-var (
-	Version   = "dev"
-	Commit    = "unknown"
-	BuildTime = "unknown"
-)
-
-// 导出版本信息供其他包使用
-func GetVersion() string   { return Version }
-func GetCommit() string    { return Commit }
-func GetBuildTime() string { return BuildTime }
-
 func main() {
 	// 检查并下载必要的数据文件
 	downloader := data.NewDownloader()
