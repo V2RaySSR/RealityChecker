@@ -50,17 +50,18 @@ jobs:
         COMMIT=$(git rev-parse --short HEAD)
         BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
         
-        # 构建标志
-        LDFLAGS="-X RealityChecker/internal/version.Version=$VERSION -X RealityChecker/internal/version.Commit=$COMMIT -X RealityChecker/internal/version.BuildTime=$BUILD_TIME"
+        # 构建标志 - 添加静态编译选项解决GLIBC兼容性问题
+        LDFLAGS="-X RealityChecker/internal/version.Version=$VERSION -X RealityChecker/internal/version.Commit=$COMMIT -X RealityChecker/internal/version.BuildTime=$BUILD_TIME -s -w"
+        BUILD_FLAGS="-ldflags '$LDFLAGS' -tags netgo -installsuffix netgo"
         
-        # Linux AMD64
-        GOOS=linux GOARCH=amd64 go build -ldflags "$LDFLAGS" -o reality-checker .
+        # Linux AMD64 - 静态编译
+        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $BUILD_FLAGS -o reality-checker .
         chmod +x reality-checker
         zip -j dist/reality-checker-linux-amd64.zip reality-checker
         rm reality-checker
         
-        # Linux ARM64
-        GOOS=linux GOARCH=arm64 go build -ldflags "$LDFLAGS" -o reality-checker .
+        # Linux ARM64 - 静态编译
+        CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build $BUILD_FLAGS -o reality-checker .
         chmod +x reality-checker
         zip -j dist/reality-checker-linux-arm64.zip reality-checker
         rm reality-checker
