@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/types"
 )
 
 // TLSStage TLS检测阶段

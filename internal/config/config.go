@@ -5,73 +5,144 @@ import (
 	"os"
 	"time"
 
-	"reality-checker-go/internal/types"
 	"gopkg.in/yaml.v3"
+	"RealityChecker/internal/types"
 )
 
-// LoadConfig 加载配置文件
+// LoadConfig 加载配置
 func LoadConfig(configPath string) (*types.Config, error) {
-	if configPath == "" {
-		configPath = "config.yaml"
-	}
-
-	// 检查配置文件是否存在
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		// 如果配置文件不存在，创建默认配置
-		defaultConfig := getDefaultConfig()
-		if err := SaveConfig(defaultConfig, configPath); err != nil {
-			return nil, fmt.Errorf("创建默认配置文件失败: %v", err)
+	// 获取默认配置
+	config := getDefaultConfig()
+	
+	// 如果提供了配置文件路径，尝试加载
+	if configPath != "" {
+		if err := loadConfigFromFile(config, configPath); err != nil {
+			return nil, fmt.Errorf("加载配置文件失败: %v", err)
 		}
-		return defaultConfig, nil
+	} else {
+		// 尝试从默认位置加载配置文件
+		defaultPaths := []string{
+			"config.yaml",
+			"config.yml",
+			"./config.yaml",
+			"./config.yml",
+		}
+		
+		for _, path := range defaultPaths {
+			if _, err := os.Stat(path); err == nil {
+				if err := loadConfigFromFile(config, path); err == nil {
+					break // 成功加载，跳出循环
+				}
+			}
+		}
 	}
-
-	// 读取配置文件
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("读取配置文件失败: %v", err)
-	}
-
-	// 解析YAML
-	var config types.Config
-	if err := yaml.Unmarshal(data, &config); err != nil {
-		return nil, fmt.Errorf("解析配置文件失败: %v", err)
-	}
-
-	// 验证和设置默认值
-	validateAndSetDefaults(&config)
-
-	return &config, nil
+	
+	// 验证并设置默认值
+	validateAndSetDefaults(config)
+	return config, nil
 }
 
-// SaveConfig 保存配置文件
-func SaveConfig(config *types.Config, configPath string) error {
-	data, err := yaml.Marshal(config)
+// loadConfigFromFile 从文件加载配置
+func loadConfigFromFile(config *types.Config, filePath string) error {
+	// 检查文件是否存在
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return fmt.Errorf("配置文件不存在: %s", filePath)
+	}
+	
+	// 读取文件内容
+	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return fmt.Errorf("序列化配置失败: %v", err)
+		return fmt.Errorf("读取配置文件失败: %v", err)
 	}
-
-	if err := os.WriteFile(configPath, data, 0644); err != nil {
-		return fmt.Errorf("写入配置文件失败: %v", err)
+	
+	// 解析YAML
+	var fileConfig types.Config
+	if err := yaml.Unmarshal(data, &fileConfig); err != nil {
+		return fmt.Errorf("解析配置文件失败: %v", err)
 	}
-
+	
+	// 合并配置（文件配置覆盖默认配置）
+	mergeConfig(config, &fileConfig)
+	
 	return nil
 }
+
+// mergeConfig 合并配置
+func mergeConfig(defaultConfig *types.Config, fileConfig *types.Config) {
+	// 网络配置
+	if fileConfig.Network.Timeout > 0 {
+		defaultConfig.Network.Timeout = fileConfig.Network.Timeout
+	}
+	if fileConfig.Network.Retries >= 0 {
+		defaultConfig.Network.Retries = fileConfig.Network.Retries
+	}
+	if len(fileConfig.Network.DNSServers) > 0 {
+		defaultConfig.Network.DNSServers = fileConfig.Network.DNSServers
+	}
+	
+	// TLS配置
+	if fileConfig.TLS.MinVersion > 0 {
+		defaultConfig.TLS.MinVersion = fileConfig.TLS.MinVersion
+	}
+	if fileConfig.TLS.MaxVersion > 0 {
+		defaultConfig.TLS.MaxVersion = fileConfig.TLS.MaxVersion
+	}
+	
+	// 并发配置
+	if fileConfig.Concurrency.MaxConcurrent > 0 {
+		defaultConfig.Concurrency.MaxConcurrent = fileConfig.Concurrency.MaxConcurrent
+	}
+	if fileConfig.Concurrency.CheckTimeout > 0 {
+		defaultConfig.Concurrency.CheckTimeout = fileConfig.Concurrency.CheckTimeout
+	}
+	if fileConfig.Concurrency.CacheTTL > 0 {
+		defaultConfig.Concurrency.CacheTTL = fileConfig.Concurrency.CacheTTL
+	}
+	
+	// 输出配置
+	if fileConfig.Output.Format != "" {
+		defaultConfig.Output.Format = fileConfig.Output.Format
+	}
+	defaultConfig.Output.Color = fileConfig.Output.Color
+	defaultConfig.Output.Verbose = fileConfig.Output.Verbose
+	
+	// 缓存配置
+	defaultConfig.Cache.DNSEnabled = fileConfig.Cache.DNSEnabled
+	defaultConfig.Cache.ResultEnabled = fileConfig.Cache.ResultEnabled
+	if fileConfig.Cache.TTL > 0 {
+		defaultConfig.Cache.TTL = fileConfig.Cache.TTL
+	}
+	if fileConfig.Cache.MaxSize > 0 {
+		defaultConfig.Cache.MaxSize = fileConfig.Cache.MaxSize
+	}
+	
+	// 批量配置
+	defaultConfig.Batch.StreamOutput = fileConfig.Batch.StreamOutput
+	defaultConfig.Batch.ProgressBar = fileConfig.Batch.ProgressBar
+	if fileConfig.Batch.ReportFormat != "" {
+		defaultConfig.Batch.ReportFormat = fileConfig.Batch.ReportFormat
+	}
+	if fileConfig.Batch.Timeout > 0 {
+		defaultConfig.Batch.Timeout = fileConfig.Batch.Timeout
+	}
+}
+
 
 // getDefaultConfig 获取默认配置
 func getDefaultConfig() *types.Config {
 	return &types.Config{
 		Network: types.NetworkConfig{
-			Timeout:    5 * time.Second,  // 与config.yaml一致
-			Retries:    1,                // 与config.yaml一致
-			DNSServers: []string{"114.114.114.114", "223.5.5.5"}, // 使用国内DNS
+			Timeout:    5 * time.Second,
+			Retries:    1,
+			DNSServers: []string{"8.8.8.8", "1.1.1.1"},
 		},
 		TLS: types.TLSConfig{
 			MinVersion: 771, // TLS 1.2
 			MaxVersion: 772, // TLS 1.3
 		},
 		Concurrency: types.ConcurrencyConfig{
-			MaxConcurrent: 8,              // 与config.yaml一致，适合VPS
-			CheckTimeout:  5 * time.Second, // 与config.yaml一致
+			MaxConcurrent: 8,
+			CheckTimeout:  5 * time.Second,
 			CacheTTL:      5 * time.Minute,
 		},
 		Output: types.OutputConfig{
@@ -89,7 +160,7 @@ func getDefaultConfig() *types.Config {
 			StreamOutput: false,
 			ProgressBar:  true,
 			ReportFormat: "text",
-			Timeout:      30 * time.Second, // 与config.yaml一致
+			Timeout:      30 * time.Second,
 		},
 	}
 }
@@ -148,21 +219,3 @@ func validateAndSetDefaults(config *types.Config) {
 	}
 }
 
-// GetConfigPath 获取配置文件路径
-func GetConfigPath() string {
-	// 按优先级查找配置文件
-	paths := []string{
-		"./config.yaml",
-		"~/reality-checker/config.yaml",
-		"/etc/reality-checker/config.yaml",
-	}
-
-	for _, path := range paths {
-		if _, err := os.Stat(path); err == nil {
-			return path
-		}
-	}
-
-	// 返回默认路径
-	return "./config.yaml"
-}

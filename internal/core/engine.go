@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"reality-checker-go/internal/network"
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/network"
+	"RealityChecker/internal/types"
 )
 
 // Engine 主检测引擎

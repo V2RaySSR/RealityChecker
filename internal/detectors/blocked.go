@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/types"
 )
 
 // BlockedStage 被墙检测阶段

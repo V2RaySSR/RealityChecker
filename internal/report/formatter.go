@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/types"
 )
 
 // Formatter 报告格式化器

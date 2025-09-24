@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/types"
 )
 
 // RedirectStage 重定向检测阶段

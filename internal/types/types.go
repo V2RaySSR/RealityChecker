@@ -13,6 +13,7 @@ type DetectionResult struct {
 	Suitable          bool              `json:"suitable"`
 	Error             error             `json:"error,omitempty"`
 	HardRequirementsMet bool            `json:"hard_requirements_met"`
+	EarlyExit         bool              `json:"early_exit"` // 是否早期退出
 	
 	// 检测结果
 	Network      *NetworkResult      `json:"network,omitempty"`

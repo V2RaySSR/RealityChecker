@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/types"
 )
 
 // CertificateStage 证书检测阶段

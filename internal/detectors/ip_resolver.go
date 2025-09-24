@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/types"
 )
 
 // IPResolverStage IP解析阶段

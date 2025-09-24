@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/types"
 )
 
 // ConnectionManager 连接管理器

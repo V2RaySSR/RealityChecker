@@ -6,7 +6,7 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/types"
 )
 
 // TableFormatter 表格格式化器
@@ -138,7 +138,9 @@ func (tf *TableFormatter) FormatSuitableTable(results []*types.DetectionResult) 
 		
 		// CDN
 		var cdnText string
-		if result.CDN != nil && result.CDN.IsCDN {
+		if !tf.isDetectorExecuted(result, "cdn") {
+			cdnText = text.FgRed.Sprint("无效")
+		} else if result.CDN != nil && result.CDN.IsCDN {
 			confidence := result.CDN.Confidence
 			cdnText = text.FgRed.Sprint(confidence)
 		} else {
@@ -147,7 +149,9 @@ func (tf *TableFormatter) FormatSuitableTable(results []*types.DetectionResult) 
 		
 		// 热门
 		var hotText string
-		if result.CDN != nil && result.CDN.IsHotWebsite {
+		if !tf.isDetectorExecuted(result, "hot") {
+			hotText = text.FgRed.Sprint("无效")
+		} else if result.CDN != nil && result.CDN.IsHotWebsite {
 			hotText = text.FgRed.Sprint("✓")
 		} else {
 			hotText = "-"
@@ -208,6 +212,11 @@ func (tf *TableFormatter) FormatUnsuitableSummary(results []*types.DetectionResu
 
 // calculateRecommendationStars 计算推荐星级
 func (tf *TableFormatter) calculateRecommendationStars(result *types.DetectionResult) string {
+	// 如果早期退出，显示"无效"
+	if result.EarlyExit {
+		return text.FgRed.Sprint("无效")
+	}
+	
 	stars := 0
 	
 	// 1. TLS硬性条件检查 (TLS1.3 + X25519 + H2 + SNI匹配)
@@ -249,4 +258,40 @@ func (tf *TableFormatter) calculateRecommendationStars(result *types.DetectionRe
 	}
 	
 	return starsText
+}
+
+// isEarlyExit 判断是否早期退出（未完成所有检测）
+func (tf *TableFormatter) isEarlyExit(result *types.DetectionResult) bool {
+	// 直接使用EarlyExit标志
+	return result.EarlyExit
+}
+
+// isDetectorExecuted 判断某个检测器是否被执行了
+func (tf *TableFormatter) isDetectorExecuted(result *types.DetectionResult, detectorType string) bool {
+	// 如果早期退出，需要根据退出原因判断哪些检测器被执行了
+	if result.EarlyExit {
+		// 按检测器优先级顺序判断
+		switch detectorType {
+		case "blocked":
+			return result.Blocked != nil
+		case "location":
+			return result.Location != nil
+		case "network":
+			return result.Network != nil
+		case "tls":
+			return result.TLS != nil
+		case "sni":
+			return result.SNI != nil
+		case "certificate":
+			return result.Certificate != nil
+		case "cdn":
+			return result.CDN != nil
+		case "hot":
+			return result.CDN != nil // 热门网站检测和CDN检测在同一个结果中
+		default:
+			return false
+		}
+	}
+	// 如果没有早期退出，所有检测器都应该被执行了
+	return true
 }

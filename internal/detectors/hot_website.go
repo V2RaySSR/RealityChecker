@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/types"
 )
 
 // HotWebsiteStage 热门网站检测阶段

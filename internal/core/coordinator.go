@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/types"
 )
 
 // Coordinator 任务协调器

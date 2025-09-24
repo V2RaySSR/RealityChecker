@@ -6,9 +6,9 @@ import (
 	"sort"
 	"time"
 
-	"reality-checker-go/internal/detectors"
-	"reality-checker-go/internal/network"
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/detectors"
+	"RealityChecker/internal/network"
+	"RealityChecker/internal/types"
 )
 
 // Pipeline 检测流水线
@@ -106,6 +106,7 @@ func (p *Pipeline) Execute(ctx context.Context, domain string) (*types.Detection
 
 		// 检查是否需要早期退出
 		if p.earlyExit && stage.CanEarlyExit() && pipelineCtx.EarlyExit {
+			pipelineCtx.Result.EarlyExit = true
 			break
 		}
 	}

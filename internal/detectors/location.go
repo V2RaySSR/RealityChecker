@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/oschwald/geoip2-golang"
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/types"
 )
 
 // LocationStage 地理位置检测阶段
@@ -69,10 +69,7 @@ func (ls *LocationStage) resolveIP(domain string) (string, error) {
 
 // getLocation 获取地理位置
 func (ls *LocationStage) getLocation(ip string) (string, bool) {
-	// 检查域名特征
-	if ls.isDomesticDomain(ip) {
-		return "国内", true
-	}
+	// 注意：这里传入的是IP地址，不是域名，所以不需要检查域名特征
 	
 	// 使用GeoIP数据库
 	if ls.geoipDB != nil {

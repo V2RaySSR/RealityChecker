@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/types"
 )
 
 // CDNStage CDN检测阶段

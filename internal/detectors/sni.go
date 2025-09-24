@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/types"
 )
 
 // SNIStage SNI检测阶段

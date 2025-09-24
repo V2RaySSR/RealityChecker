@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"reality-checker-go/internal/core"
-	"reality-checker-go/internal/report"
-	"reality-checker-go/internal/types"
+	"RealityChecker/internal/core"
+	"RealityChecker/internal/report"
+	"RealityChecker/internal/types"
 )
 
 // Manager 批量管理器
@@ -164,7 +164,7 @@ func (bm *Manager) CheckDomainsWithProgress(ctx context.Context, domains []strin
 			completed++
 			
 			// 显示进度
-			fmt.Printf("正在检测 [%d/%d]: %s... ", completed, len(domains), progressResult.Domain)
+			fmt.Printf("[%s] 正在检测 [%d/%d]: %s... ", time.Now().Format("15:04:05"), completed, len(domains), progressResult.Domain)
 			
 			if progressResult.Error != nil {
 				fmt.Printf("失败 - %v\n", progressResult.Error)
