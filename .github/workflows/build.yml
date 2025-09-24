@@ -1,0 +1,142 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Get version from tag
+      id: version
+      run: |
+        if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/}
+        else
+          VERSION="dev-$(date +%Y%m%d-%H%M%S)"
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Building version: $VERSION"
+        
+    - name: Build for multiple platforms
+      run: |
+        # 创建输出目录
+        mkdir -p dist
+        
+        # 设置版本信息
+        VERSION="${{ steps.version.outputs.version }}"
+        COMMIT=$(git rev-parse --short HEAD)
+        BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        
+        # 构建标志
+        LDFLAGS="-X RealityChecker/internal/version.Version=$VERSION -X RealityChecker/internal/version.Commit=$COMMIT -X RealityChecker/internal/version.BuildTime=$BUILD_TIME"
+        
+        # Linux AMD64
+        GOOS=linux GOARCH=amd64 go build -ldflags "$LDFLAGS" -o dist/reality-checker-linux-amd64 .
+        
+        # Linux ARM64
+        GOOS=linux GOARCH=arm64 go build -ldflags "$LDFLAGS" -o dist/reality-checker-linux-arm64 .
+        
+        # Windows AMD64
+        GOOS=windows GOARCH=amd64 go build -ldflags "$LDFLAGS" -o dist/reality-checker-windows-amd64.exe .
+        
+        # Windows ARM64
+        GOOS=windows GOARCH=arm64 go build -ldflags "$LDFLAGS" -o dist/reality-checker-windows-arm64.exe .
+        
+        # macOS AMD64
+        GOOS=darwin GOARCH=amd64 go build -ldflags "$LDFLAGS" -o dist/reality-checker-darwin-amd64 .
+        
+        # macOS ARM64 (Apple Silicon)
+        GOOS=darwin GOARCH=arm64 go build -ldflags "$LDFLAGS" -o dist/reality-checker-darwin-arm64 .
+        
+        # 显示构建结果
+        ls -la dist/
+        
+    - name: Create checksums
+      run: |
+        cd dist
+        sha256sum * > checksums.txt
+        
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          dist/*
+        body: |
+          ## Reality协议目标网站检测工具 ${{ steps.version.outputs.version }}
+          
+          ### 下载说明
+          
+          请根据您的操作系统和架构选择对应的文件：
+          
+          **Linux:**
+          - `reality-checker-linux-amd64` - Linux x86_64
+          - `reality-checker-linux-arm64` - Linux ARM64
+          
+          **Windows:**
+          - `reality-checker-windows-amd64.exe` - Windows x86_64
+          - `reality-checker-windows-arm64.exe` - Windows ARM64
+          
+          **macOS:**
+          - `reality-checker-darwin-amd64` - macOS Intel
+          - `reality-checker-darwin-arm64` - macOS Apple Silicon
+          
+          ### 使用方法
+          
+          1. 下载对应您系统的可执行文件
+          2. 给文件添加执行权限（Linux/macOS）：
+             ```bash
+             chmod +x reality-checker-*
+             ```
+          3. 运行程序：
+             ```bash
+             ./reality-checker-* check example.com
+             ```
+          
+          ### 校验文件
+          
+          下载后请验证文件完整性：
+          ```bash
+          sha256sum -c checksums.txt
+          ```
+          
+          ### 自动数据文件下载
+          
+          程序首次运行时会自动下载必要的数据文件，包括：
+          - GeoIP数据库 (Country.mmdb)
+          - GFW规则列表 (gfwlist.conf)
+          - CDN检测关键词 (cdn_keywords.txt)
+          - 热门网站列表 (hot_websites.txt)
+          
+          ### 版本信息
+          - **版本**: ${{ steps.version.outputs.version }}
+          - **提交**: ${{ github.sha }}
+          - **构建时间**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          ---
+          
+          **注意**: 本工具仅用于技术研究和学习目的，请遵守当地法律法规。
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload artifacts (for non-tag builds)
+      if: "!startsWith(github.ref, 'refs/tags/')"
+      uses: actions/upload-artifact@v3
+      with:
+        name: reality-checker-builds
+        path: dist/

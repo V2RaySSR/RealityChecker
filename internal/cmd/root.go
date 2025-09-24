@@ -11,6 +11,7 @@ import (
 	"RealityChecker/internal/config"
 	"RealityChecker/internal/core"
 	"RealityChecker/internal/ui"
+	"RealityChecker/internal/version"
 )
 
 // RootCmd 根命令结构
@@ -87,10 +88,21 @@ func (r *RootCmd) Execute() {
 			os.Exit(1)
 		}
 		r.executeCSV(os.Args[2])
+	case "version", "-v", "--version":
+		r.showVersion()
 	default:
 		ui.PrintUsage()
 		os.Exit(1)
 	}
+}
+
+// showVersion 显示版本信息
+func (r *RootCmd) showVersion() {
+	fmt.Printf("Reality协议目标网站检测工具\n")
+	fmt.Printf("版本: %s\n", version.GetVersion())
+	fmt.Printf("提交: %s\n", version.GetCommit())
+	fmt.Printf("构建时间: %s\n", version.GetBuildTime())
+	fmt.Printf("GitHub: https://github.com/V2RaySSR/RealityChecker\n")
 }
 
 // cleanup 清理资源
