@@ -1,24 +1,40 @@
-# 编译产物
+# 编译后的可执行文件
 reality-checker
-reality-checker-*
+reality-checker.exe
+reality-checker-linux-amd64
+reality-checker-windows-amd64.exe
+reality-checker-darwin-amd64
+reality-checker-linux-arm64
 
-# 数据文件（太大，需要单独下载）
-data/Country.mmdb
-data/cdncheck
+# 项目状态文档（本地开发用）
+PROJECT_STATUS.md
 
-# 备份文件
-*.backup
-*backup*
+# 子项目目录
+reality-checker-go/
 
-# IDE文件
-.vscode/
-.idea/
-*.swp
-*.swo
+# Cursor IDE配置
+.cursor/
 
-# 日志文件
-*.log
+# 系统文件
+.DS_Store
+Thumbs.db
 
 # 临时文件
 *.tmp
-*.temp
+*.log
+*.swp
+*.swo
+*~
+
+# IDE配置
+.vscode/
+.idea/
+*.iml
+
+# Go相关
+vendor/
+*.test
+*.prof
+
+# 配置文件（可选）
+config.yaml
