@@ -7,8 +7,6 @@ import (
 
 // PrintBanner 打印程序横幅
 func PrintBanner() {
-	// 清屏
-	fmt.Print("\033[2J\033[H")
 
 	// 获取版本信息
 	versionInfo := getVersionInfo()

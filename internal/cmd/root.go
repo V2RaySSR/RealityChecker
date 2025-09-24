@@ -72,25 +72,36 @@ func (r *RootCmd) Execute() {
 	switch os.Args[1] {
 	case "check":
 		if len(os.Args) < 3 {
+			fmt.Println("错误：缺少域名参数")
 			fmt.Println("用法: reality-checker check <domain>")
+			fmt.Println("示例: reality-checker check apple.com")
 			os.Exit(1)
 		}
 		r.executeCheck(os.Args[2])
 	case "batch":
 		if len(os.Args) < 3 {
-			fmt.Println("用法: reality-checker batch <domain1,domain2,...>")
+			fmt.Println("错误：缺少域名参数")
+			fmt.Println("用法: reality-checker batch <domain1> <domain2> <domain3> ...")
+			fmt.Println("示例: reality-checker batch apple.com google.com microsoft.com")
 			os.Exit(1)
 		}
-		r.executeBatch(os.Args[2])
+		// 将所有参数（除了命令名）合并为空格分隔的字符串
+		domainsStr := strings.Join(os.Args[2:], " ")
+		r.executeBatch(domainsStr)
 	case "csv":
 		if len(os.Args) < 3 {
+			fmt.Println("错误：缺少CSV文件参数")
 			fmt.Println("用法: reality-checker csv <csv_file>")
+			fmt.Println("示例: reality-checker csv domains.csv")
 			os.Exit(1)
 		}
 		r.executeCSV(os.Args[2])
 	case "version", "-v", "--version":
 		r.showVersion()
 	default:
+		fmt.Printf("错误：未知命令 '%s'\n", os.Args[1])
+		fmt.Println("可用命令: check, batch, csv, version")
+		fmt.Println()
 		ui.PrintUsage()
 		os.Exit(1)
 	}
