@@ -2,7 +2,7 @@
 
 一个专业的Reality协议目标网站检测工具，用于评估网站是否适合作为Reality协议的目标域名。
 
-**版本**: v2.1.0 | V2RaySSR综合网
+**版本**: v2.1.0 | [V2RaySSR综合网](https://v2rayssr.com)
 
 ## ✨ 功能特性
 
@@ -13,7 +13,7 @@
 * **CDN检测** - 智能检测CDN使用情况
 * **热门网站检测** - 检测是否为热门网站
 * **重定向检测** - 检测域名重定向
-* **批量检测** - 支持多域名并发检测
+* **批量检测** - 支持多域名并发检测，可与RealiTLScanner配合使用
 * **智能报告** - 生成详细的检测分析报告
 
 ## 🚀 快速开始
@@ -92,12 +92,16 @@ go build -o reality-checker
 ./reality-checker batch "apple.com,tesla.com,microsoft.com"
 ```
 
+**推荐工作流程**: 对于大量域名检测，建议先使用 [RealiTLScanner](https://github.com/XTLS/RealiTLScanner) 进行初步扫描，生成 `domains.csv` 文件，然后使用本工具进行深度检测。
+
 ### CSV文件检测
 
 ```bash
 # 从CSV文件批量检测域名
 ./reality-checker csv domains.csv
 ```
+
+**注意**: 对于多域名检测，建议配合使用 [RealiTLScanner](https://github.com/XTLS/RealiTLScanner) 工具。该工具可以扫描大量域名并生成 `domains.csv` 文件，然后使用本工具进行详细的Reality协议适合性检测。
 
 ### 查看帮助
 
