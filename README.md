@@ -28,8 +28,14 @@
 **方法1：直接下载（推荐）**
 
 从 [Releases](https://github.com/V2RaySSR/RealityChecker/releases) 页面下载对应架构的zip文件：
-- `reality-checker-linux-amd64.zip` - Linux x86_64
-- `reality-checker-linux-arm64.zip` - Linux ARM64
+
+```bash
+# Linux x86_64
+wget https://github.com/V2RaySSR/RealityChecker/releases/latest/download/reality-checker-linux-amd64.zip
+
+# Linux ARM64
+wget https://github.com/V2RaySSR/RealityChecker/releases/latest/download/reality-checker-linux-arm64.zip
+```
 
 解压后直接使用：
 ```bash
