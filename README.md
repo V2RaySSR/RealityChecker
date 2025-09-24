@@ -18,11 +18,6 @@
 
 ## 🚀 快速开始
 
-### 系统要求
-
-* **Go 1.21+** - 用于编译和运行
-* **Linux/macOS/Windows** - 跨平台支持
-
 ### 安装步骤
 
 **1. 克隆项目：**
@@ -105,6 +100,11 @@ go build -o reality-checker
 # 显示使用说明
 ./reality-checker
 ```
+
+## 系统要求
+
+* **Go 1.21+** - 用于编译和运行
+* **Linux/macOS/Windows** - 跨平台支持
 
 ## 📊 检测报告
 
