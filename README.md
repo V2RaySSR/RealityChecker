@@ -10,131 +10,48 @@
 * **地理位置检测** - 检测IP地理位置，国内网站直接终止
 * **TLS协议检测** - 检测TLS 1.3和X25519支持
 * **证书检测** - 检测证书有效性和SNI匹配
-* **CDN检测** - 使用cdncheck工具检测CDN使用
+* **CDN检测** - 智能检测CDN使用情况
 * **热门网站检测** - 检测是否为热门网站
 * **重定向检测** - 检测域名重定向
 * **批量检测** - 支持多域名并发检测
 * **智能报告** - 生成详细的检测分析报告
 
-## 🚀 一键安装（推荐）
+## 🚀 快速开始
 
-### 支持系统
+### 系统要求
 
-* **CentOS系列**: CentOS, RHEL, Rocky Linux, AlmaLinux
-* **Debian系列**: Debian, Ubuntu
-* **macOS**: 支持Intel和Apple Silicon
-* **Windows**: 支持Windows 10/11
-
-**安装脚本会自动：**
-
-* 检测操作系统和版本
-* 自动安装必要工具和依赖
-* 下载数据文件（GeoIP、GFWList、cdncheck）
-* 创建启动脚本
-* 配置颜色输出支持
+* **Go 1.21+** - 用于编译和运行
+* **Linux/macOS/Windows** - 跨平台支持
 
 ### 安装步骤
 
-**1. 准备系统环境：**
-
-_CentOS/RHEL/Rocky/AlmaLinux:_
-
-```bash
-# 更新系统
-yum update -y
-
-# 安装git和基础工具
-yum install -y git curl wget unzip
-```
-
-_Debian/Ubuntu:_
-
-```bash
-# 更新包列表
-apt update
-
-# 安装git和基础工具
-apt install -y git curl wget unzip
-```
-
-_macOS:_
-
-```bash
-# 安装Homebrew (如果未安装)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# 安装基础工具
-brew install git curl wget
-```
-
-**2. 克隆项目：**
+**1. 克隆项目：**
 
 ```bash
 git clone https://github.com/V2RaySSR/RealityChecker.git
 cd RealityChecker
 ```
 
-**3. 编译安装：**
+**2. 编译程序：**
 
 ```bash
-# 编译Go程序
 go build -o reality-checker
-
-# 首次运行会自动下载数据文件
-./reality-checker check apple.com
 ```
 
-**4. 开始检测：**
-
-_单域名检测：_
+**3. 开始检测：**
 
 ```bash
+# 单域名检测
 ./reality-checker check <域名>
-```
 
-_批量检测：_
-
-```bash
+# 批量检测
 ./reality-checker batch "域名1,域名2,域名3"
-```
 
-_CSV文件检测：_
-
-```bash
+# CSV文件检测
 ./reality-checker csv <csv文件>
-```
 
-_查看帮助：_
-
-```bash
+# 查看帮助
 ./reality-checker
-```
-
-## 📦 手动安装
-
-### 从源码编译
-
-```bash
-# 克隆项目
-git clone https://github.com/V2RaySSR/RealityChecker.git
-cd RealityChecker
-
-# 编译
-go build -o reality-checker
-
-# 运行检测
-./reality-checker check <域名>
-```
-
-### 下载预编译版本
-
-```bash
-# 下载最新版本 (Linux AMD64)
-wget https://github.com/V2RaySSR/RealityChecker/releases/latest/download/reality-checker-linux-amd64
-chmod +x reality-checker-linux-amd64
-
-# 直接使用
-./reality-checker-linux-amd64 check <域名>
 ```
 
 ## 📝 检测标准
@@ -294,4 +211,3 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 ---
 
 **注意**: 本工具仅用于技术研究和学习目的，请遵守当地法律法规，合理使用网络资源。
-
