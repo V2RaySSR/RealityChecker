@@ -6,6 +6,10 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -68,13 +72,13 @@ jobs:
         # macOS AMD64
         GOOS=darwin GOARCH=amd64 go build -ldflags "$LDFLAGS" -o reality-checker .
         chmod +x reality-checker
-        zip -j dist/reality-checker-darwin-amd64.zip reality-checker
+        zip -j dist/reality-checker-macos-amd64.zip reality-checker
         rm reality-checker
         
         # macOS ARM64 (Apple Silicon)
         GOOS=darwin GOARCH=arm64 go build -ldflags "$LDFLAGS" -o reality-checker .
         chmod +x reality-checker
-        zip -j dist/reality-checker-darwin-arm64.zip reality-checker
+        zip -j dist/reality-checker-macos-arm64.zip reality-checker
         rm reality-checker
         
         # 显示构建结果
@@ -107,8 +111,8 @@ jobs:
           - `reality-checker-windows-arm64.zip` - Windows ARM64
           
           **macOS:**
-          - `reality-checker-darwin-amd64.zip` - macOS Intel
-          - `reality-checker-darwin-arm64.zip` - macOS Apple Silicon
+          - `reality-checker-macos-amd64.zip` - macOS Intel
+          - `reality-checker-macos-arm64.zip` - macOS Apple Silicon
           
           ### 使用方法
           
