@@ -206,7 +206,12 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 
 * [Loyalsoldier/geoip](https://github.com/Loyalsoldier/geoip) - GeoIP数据库
 * [Loyalsoldier/clash-rules](https://github.com/Loyalsoldier/clash-rules) - GFW规则
-* [projectdiscovery/cdncheck](https://github.com/projectdiscovery/cdncheck) - CDN检测工具
+
+## 🔧 技术实现
+
+* **CDN检测** - 自研多维度检测算法，包括CNAME记录、HTTP响应头、ASN查询等多种检测方法
+* **TLS检测** - 原生Go TLS库实现，支持TLS 1.3和X25519检测
+* **地理位置检测** - 基于MaxMind GeoIP2数据库的IP地理位置判断
 
 ---
 
