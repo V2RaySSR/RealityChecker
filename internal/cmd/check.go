@@ -16,6 +16,7 @@ func (r *RootCmd) executeCheck(domain string) {
 	// 验证域名格式
 	domain = strings.TrimSpace(domain)
 	if !isValidDomain(domain) {
+		fmt.Println()
 		fmt.Printf("错误：域名格式无效 '%s'\n", domain)
 		fmt.Println("提示：请检查域名格式，例如：apple.com, google.com")
 		fmt.Println("域名要求：")
@@ -23,6 +24,7 @@ func (r *RootCmd) executeCheck(domain string) {
 		fmt.Println("   - 不能以点开头或结尾")
 		fmt.Println("   - 不能包含连续的点")
 		fmt.Println("   - 长度不超过253个字符")
+		fmt.Println()
 		return
 	}
 	
@@ -41,7 +43,7 @@ func (r *RootCmd) executeCheck(domain string) {
 	fmt.Printf("\n%s", formatter.FormatSingleResult(result))
 }
 
-// isValidDomain 验证域名格式是否有效（与batch.go中的函数相同）
+// isValidDomain 验证域名格式是否有效
 func isValidDomain(domain string) bool {
 	// 基本长度检查
 	if len(domain) == 0 || len(domain) > 253 {
@@ -79,3 +81,4 @@ func isValidDomain(domain string) bool {
 	
 	return true
 }
+

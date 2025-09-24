@@ -91,7 +91,7 @@ jobs:
           ./reality-checker check example.com
           
           # 批量检测
-          ./reality-checker batch "domain1,domain2,domain3"
+          ./reality-checker batch domain1 domain2 domain3
           
           # CSV文件检测
           ./reality-checker csv domains.csv

@@ -1,0 +1,40 @@
+# 编译后的可执行文件
+reality-checker
+reality-checker.exe
+reality-checker-linux-amd64
+reality-checker-windows-amd64.exe
+reality-checker-darwin-amd64
+reality-checker-linux-arm64
+
+# 项目状态文档（本地开发用）
+PROJECT_STATUS.md
+
+# 子项目目录
+reality-checker-go/就
+
+# Cursor IDE配置
+.cursor/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.log
+*.swp
+*.swo
+*~
+
+# IDE配置
+.vscode/
+.idea/
+*.iml
+
+# Go相关
+vendor/
+*.test
+*.prof
+
+# 配置文件（可选）
+config.yaml

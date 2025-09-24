@@ -76,8 +76,8 @@ go build -o reality-checker
 ### 批量检测
 
 ```bash
-# 批量检测多个域名（逗号分隔）
-./reality-checker batch "apple.com,tesla.com,microsoft.com"
+# 批量检测多个域名（空格分隔）
+./reality-checker batch apple.com tesla.com microsoft.com
 ```
 
 ### CSV文件检测

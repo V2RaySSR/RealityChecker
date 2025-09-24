@@ -284,6 +284,11 @@ func (wp *WorkerPool) worker(id int) {
 	for {
 		select {
 		case task := <-wp.taskQueue:
+			// 检查task是否为nil
+			if task == nil {
+				continue
+			}
+			
 			wp.mu.Lock()
 			wp.activeWorkers++
 			wp.mu.Unlock()

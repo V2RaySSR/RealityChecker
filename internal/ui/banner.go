@@ -7,6 +7,7 @@ import (
 
 // PrintBanner 打印程序横幅
 func PrintBanner() {
+	fmt.Println()
 
 	// 获取版本信息
 	versionInfo := getVersionInfo()
