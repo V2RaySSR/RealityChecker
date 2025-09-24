@@ -127,61 +127,6 @@ go build -o reality-checker
 * **内存监控** - 实时监控内存使用
 * **自适应并发控制** - 根据系统性能动态调整并发数
 
-## 🛠️ 开发指南
-
-### 项目构建
-
-```bash
-# 本地开发构建
-go build -o reality-checker
-
-# 交叉编译 (多平台支持)
-GOOS=linux GOARCH=amd64 go build -o reality-checker-linux-amd64
-GOOS=windows GOARCH=amd64 go build -o reality-checker-windows-amd64.exe
-GOOS=darwin GOARCH=amd64 go build -o reality-checker-darwin-amd64
-GOOS=linux GOARCH=arm64 go build -o reality-checker-linux-arm64
-```
-
-### 核心模块
-
-* **Engine** - 核心检测引擎
-* **Batch Manager** - 批量检测管理器
-* **Detectors** - 各种检测器（被墙、CDN、证书、TLS等）
-* **Report Formatter** - 报告格式化系统
-* **UI** - 用户界面（横幅、时间戳消息等）
-
-## 🔧 故障排除
-
-### 常见问题
-
-**1. 数据文件下载失败**
-
-```bash
-# 检查网络连接
-curl -I https://github.com/Loyalsoldier/geoip/releases/latest/download/Country.mmdb
-```
-
-**2. 检测结果不准确**
-
-```bash
-# 检查数据文件是否存在
-ls -la data/
-```
-
-**3. 性能问题**
-
-```bash
-# 减少批量检测的域名数量
-./reality-checker batch "domain1,domain2"
-```
-
-## ⚠️ 免责声明
-
-本工具仅用于技术研究和学习目的，请遵守相关法律法规，不得用于非法用途。
-
-## 📄 许可证
-
-MIT License - 详见 [LICENSE](LICENSE) 文件
 
 ## 🤝 贡献指南
 
