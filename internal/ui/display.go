@@ -37,6 +37,23 @@ func PrintTimestampedMessage(format string, args ...interface{}) {
 	fmt.Printf("[%s] %s\n", timestamp, message)
 }
 
+// PrintError 打印错误信息（带空行间距）
+func PrintError(message string) {
+	fmt.Println()
+	fmt.Println(message)
+	fmt.Println()
+}
+
+// PrintErrorWithDetails 打印错误信息和详细信息
+func PrintErrorWithDetails(message string, details ...string) {
+	fmt.Println()
+	fmt.Println(message)
+	for _, detail := range details {
+		fmt.Println(detail)
+	}
+	fmt.Println()
+}
+
 // getLatestVersion 获取GitHub最新版本号
 func getLatestVersion() string {
 	// 设置超时时间

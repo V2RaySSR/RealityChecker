@@ -13,10 +13,10 @@ func (r *RootCmd) executeBatch(domainsStr string) {
 	domains, invalidDomains, duplicateDomains := parseDomains(domainsStr)
 	
 	if len(domains) == 0 {
-		fmt.Println()
-		fmt.Println("错误：没有有效的域名可以检测")
-		fmt.Println("提示：请检查域名格式，例如：apple.com, google.com")
-		fmt.Println()
+		ui.PrintErrorWithDetails(
+			"错误：没有有效的域名可以检测",
+			"提示：请检查域名格式，例如：apple.com, google.com",
+		)
 		return
 	}
 

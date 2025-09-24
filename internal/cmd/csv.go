@@ -13,21 +13,19 @@ import (
 func (r *RootCmd) executeCSV(csvFile string) {
 	// 检查文件是否存在
 	if _, err := os.Stat(csvFile); os.IsNotExist(err) {
-		fmt.Println()
-		fmt.Printf("错误：CSV文件不存在 '%s'\n", csvFile)
-		fmt.Println("请使用 RealiTLScanner 工具扫描，得到 CSV 文件")
-		fmt.Println("命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 50 -timeout 5 -out file.csv")
-		fmt.Println("（提示：RealiTLScanner 不要在VPS上面运行）")
-		fmt.Println()
+		ui.PrintErrorWithDetails(
+			fmt.Sprintf("错误：CSV文件不存在 '%s'", csvFile),
+			"请使用 RealiTLScanner 工具扫描，得到 CSV 文件",
+			"命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 50 -timeout 5 -out file.csv",
+			"（提示：RealiTLScanner 不要在VPS上面运行）",
+		)
 		return
 	}
 	
 	// 读取CSV文件
 	file, err := os.Open(csvFile)
 	if err != nil {
-		fmt.Println()
-		fmt.Printf("错误：无法打开CSV文件 '%s': %v\n", csvFile, err)
-		fmt.Println()
+		ui.PrintError(fmt.Sprintf("错误：无法打开CSV文件 '%s': %v", csvFile, err))
 		return
 	}
 	defer file.Close()
@@ -36,31 +34,31 @@ func (r *RootCmd) executeCSV(csvFile string) {
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
 	if err != nil {
-		fmt.Println()
-		fmt.Printf("错误：解析CSV文件失败: %v\n", err)
-		fmt.Println("请使用 RealiTLScanner 工具扫描，得到 CSV 文件")
-		fmt.Println("命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 50 -timeout 5 -out file.csv")
-		fmt.Println()
+		ui.PrintErrorWithDetails(
+			fmt.Sprintf("错误：解析CSV文件失败: %v", err),
+			"请使用 RealiTLScanner 工具扫描，得到 CSV 文件",
+			"命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 50 -timeout 5 -out file.csv",
+		)
 		return
 	}
 
 	if len(records) < 2 {
-		fmt.Println()
-		fmt.Println("错误：CSV文件格式错误或为空")
-		fmt.Println("请使用 RealiTLScanner 工具扫描，得到 CSV 文件")
-		fmt.Println("命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 50 -timeout 5 -out file.csv")
-		fmt.Println()
+		ui.PrintErrorWithDetails(
+			"错误：CSV文件格式错误或为空",
+			"请使用 RealiTLScanner 工具扫描，得到 CSV 文件",
+			"命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 50 -timeout 5 -out file.csv",
+		)
 		return
 	}
 
 	// 提取域名（从CERT_DOMAIN列）
 	domains := extractDomainsFromCSV(records)
 	if len(domains) == 0 {
-		fmt.Println()
-		fmt.Println("错误：未找到有效的域名")
-		fmt.Println("请使用 RealiTLScanner 工具扫描，得到 CSV 文件")
-		fmt.Println("命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 50 -timeout 5 -out file.csv")
-		fmt.Println()
+		ui.PrintErrorWithDetails(
+			"错误：未找到有效的域名",
+			"请使用 RealiTLScanner 工具扫描，得到 CSV 文件",
+			"命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 50 -timeout 5 -out file.csv",
+		)
 		return
 	}
 
