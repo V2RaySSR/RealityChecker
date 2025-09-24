@@ -151,42 +151,10 @@ curl -I https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/hot_
 
 如果自动下载失败，请手动下载以下文件到 `data/` 目录：
 
-- `Country.mmdb`: https://github.com/Loyalsoldier/geoip/releases/latest/download/Country.mmdb
-- `gfwlist.conf`: https://raw.githubusercontent.com/Loyalsoldier/clash-rules/release/gfw.txt
-- `cdn_keywords.txt`: https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/cdn_keywords.txt
-- `hot_websites.txt`: https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/hot_websites.txt
-
-```bash
-# 创建data目录
-mkdir -p data
-
-# 下载文件（示例）
-wget -O data/Country.mmdb https://github.com/Loyalsoldier/geoip/releases/latest/download/Country.mmdb
-wget -O data/gfwlist.conf https://raw.githubusercontent.com/Loyalsoldier/clash-rules/release/gfw.txt
-wget -O data/cdn_keywords.txt https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/cdn_keywords.txt
-wget -O data/hot_websites.txt https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/hot_websites.txt
-```
-
-**2. 检测结果不准确**
-
-```bash
-# 检查数据文件是否存在且完整
-ls -la data/
-# 应该看到：Country.mmdb, gfwlist.conf, cdn_keywords.txt, hot_websites.txt
-
-# 检查文件大小（确保下载完整）
-du -h data/*
-```
-
-**3. 性能问题**
-
-```bash
-# 减少批量检测的域名数量
-./reality-checker batch "domain1,domain2"
-
-# 使用CSV文件进行大量域名检测
-./reality-checker csv domains.csv
-```
+- [Country.mmdb](https://github.com/Loyalsoldier/geoip/releases/latest/download/Country.mmdb)
+- [gfwlist.conf](https://raw.githubusercontent.com/Loyalsoldier/clash-rules/release/gfw.txt)
+- [cdn_keywords.txt](https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/cdn_keywords.txt)
+- [hot_websites.txt](https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/hot_websites.txt)
 
 ## 🤝 贡献指南
 
