@@ -27,9 +27,9 @@ func (r *RootCmd) executeCheck(domain string) {
 		)
 		return
 	}
-	
+
 	ui.PrintTimestampedMessage("开始检测域名: %s", domain)
-	
+
 	result, err := r.engine.CheckDomain(r.ctx, domain)
 	if err != nil {
 		fmt.Printf("检测失败: %v\n", err)
@@ -48,28 +48,28 @@ func isValidDomain(domain string) bool {
 	if len(domain) == 0 || len(domain) > 253 {
 		return false
 	}
-	
+
 	// 检查是否包含非法字符
 	if strings.ContainsAny(domain, " \t\n\r") {
 		return false
 	}
-	
+
 	// 检查是否以点开头或结尾
 	if strings.HasPrefix(domain, ".") || strings.HasSuffix(domain, ".") {
 		return false
 	}
-	
+
 	// 检查是否包含连续的点
 	if strings.Contains(domain, "..") {
 		return false
 	}
-	
+
 	// 使用正则表达式验证域名格式
 	domainRegex := regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$`)
 	if !domainRegex.MatchString(domain) {
 		return false
 	}
-	
+
 	// 尝试解析域名（不进行实际DNS查询）
 	_, err := net.LookupHost(domain)
 	if err != nil {
@@ -77,7 +77,6 @@ func isValidDomain(domain string) bool {
 		// 因为可能是网络问题或域名确实不存在
 		return true
 	}
-	
+
 	return true
 }
-

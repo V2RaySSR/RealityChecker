@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"RealityChecker/internal/ui"
 )
@@ -21,7 +22,7 @@ func (r *RootCmd) executeCSV(csvFile string) {
 		)
 		return
 	}
-	
+
 	// 读取CSV文件
 	file, err := os.Open(csvFile)
 	if err != nil {
@@ -62,21 +63,9 @@ func (r *RootCmd) executeCSV(csvFile string) {
 		return
 	}
 
-	fmt.Printf("从CSV文件提取到 %d 个域名:\n", len(domains))
-	// 显示前10个域名作为预览
-	previewCount := 10
-	if len(domains) < previewCount {
-		previewCount = len(domains)
-	}
-	for i := 0; i < previewCount; i++ {
-		fmt.Printf("  %d. %s\n", i+1, domains[i])
-	}
-	if len(domains) > previewCount {
-		fmt.Printf("  ... 还有 %d 个域名\n", len(domains)-previewCount)
-	}
-	fmt.Println("")
+	fmt.Printf("[%s] 从CSV文件提取到 %d 个域名\n", time.Now().Format("15:04:05"), len(domains))
 	ui.PrintTimestampedMessage("开始批量检测...")
-	
+
 	_, err = r.batchManager.CheckDomains(r.ctx, domains)
 	if err != nil {
 		fmt.Printf("批量检测失败: %v\n", err)
@@ -88,33 +77,33 @@ func (r *RootCmd) executeCSV(csvFile string) {
 func extractDomainsFromCSV(records [][]string) []string {
 	var domains []string
 	domainSet := make(map[string]bool) // 用于去重
-	
+
 	// 跳过标题行，从第二行开始处理
 	for i := 1; i < len(records); i++ {
 		if len(records[i]) < 3 {
 			continue
 		}
-		
+
 		certDomain := strings.TrimSpace(records[i][2]) // CERT_DOMAIN列
 		if certDomain == "" {
 			continue
 		}
-		
+
 		// 清理域名（移除引号等）
 		certDomain = strings.Trim(certDomain, "\"")
-		
+
 		// 排除一些不需要的域名
 		if shouldExcludeDomain(certDomain) {
 			continue
 		}
-		
+
 		// 去重
 		if !domainSet[certDomain] {
 			domains = append(domains, certDomain)
 			domainSet[certDomain] = true
 		}
 	}
-	
+
 	return domains
 }
 
@@ -124,7 +113,7 @@ func shouldExcludeDomain(domain string) bool {
 	if strings.Contains(domain, "*") {
 		return true
 	}
-	
+
 	// 2. 排除列表
 	excludePatterns := []string{
 		"localhost",
@@ -135,15 +124,15 @@ func shouldExcludeDomain(domain string) bool {
 		"FortiGate",
 		"Unspecified",
 	}
-	
+
 	domainLower := strings.ToLower(domain)
-	
+
 	for _, pattern := range excludePatterns {
 		if strings.Contains(domainLower, strings.ToLower(pattern)) {
 			return true
 		}
 	}
-	
+
 	// 3. 排除IP地址格式
 	if strings.Contains(domain, ".") && !strings.Contains(domain, "..") {
 		parts := strings.Split(domain, ".")
@@ -161,16 +150,16 @@ func shouldExcludeDomain(domain string) bool {
 			}
 		}
 	}
-	
+
 	// 4. 排除无效域名（太短或包含特殊字符）
 	if len(domain) < 3 {
 		return true
 	}
-	
+
 	// 5. 排除包含多个连续点的域名
 	if strings.Contains(domain, "..") {
 		return true
 	}
-	
+
 	return false
 }
