@@ -3,142 +3,141 @@
 # Reality目标域名应避免使用热门网站，以降低被检测风险
 
 # 搜索引擎
-google.com
-baidu.com
-bing.com
-yahoo.com
-duckduckgo.com
+*.google.com
+*.baidu.com
+*.bing.com
+*.yahoo.com
+*.duckduckgo.com
 
 # 社交媒体
-facebook.com
-x.com
-instagram.com
-linkedin.com
-tiktok.com
-snapchat.com
-pinterest.com
-reddit.com
+*.facebook.com
+*.x.com
+*.instagram.com
+*.linkedin.com
+*.tiktok.com
+*.snapchat.com
+*.pinterest.com
+*.reddit.com
 
 # 视频平台
-youtube.com
-netflix.com
-twitch.tv
-vimeo.com
-dailymotion.com
+*.youtube.com
+*.netflix.com
+*.twitch.tv
+*.vimeo.com
+*.dailymotion.com
 
 # 电商平台
-amazon.com
-ebay.com
-alibaba.com
-taobao.com
-jd.com
-walmart.com
+*.amazon.com
+*.ebay.com
+*.alibaba.com
+*.taobao.com
+*.jd.com
+*.walmart.com
 
 # 科技公司
-microsoft.com
-apple.com
-google.com
-meta.com
-netflix.com
-spotify.com
-github.com
-stackoverflow.com
-tesla.com
-openai.com
-anthropic.com
+*.microsoft.com
+*.apple.com
+*.meta.com
+*.spotify.com
+*.github.com
+*.stackoverflow.com
+*.tesla.com
+*.openai.com
+*.anthropic.com
 
 # 热门企业网站
-oracle.com
-salesforce.com
-adobe.com
-intel.com
-nvidia.com
-amd.com
-cisco.com
-ibm.com
-hp.com
-dell.com
-lenovo.com
-samsung.com
-sony.com
-panasonic.com
-lg.com
-nike.com
-adidas.com
-coca-cola.com
-pepsi.com
-mcdonalds.com
-starbucks.com
-kfc.com
-subway.com
-pizza-hut.com
-dominos.com
+*.oracle.com
+*.salesforce.com
+*.adobe.com
+*.intel.com
+*.nvidia.com
+*.amd.com
+*.cisco.com
+*.ibm.com
+*.hp.com
+*.dell.com
+*.lenovo.com
+*.samsung.com
+*.sony.com
+*.panasonic.com
+*.lg.com
+*.nike.com
+*.adidas.com
+*.coca-cola.com
+*.pepsi.com
+*.mcdonalds.com
+*.starbucks.com
+*.kfc.com
+*.subway.com
+*.pizza-hut.com
+*.dominos.com
 
 # 新闻媒体
-cnn.com
-bbc.com
-reuters.com
-nytimes.com
-washingtonpost.com
-guardian.com
+*.cnn.com
+*.bbc.com
+*.reuters.com
+*.nytimes.com
+*.washingtonpost.com
+*.guardian.com
 
 # 金融支付
-paypal.com
-stripe.com
-square.com
-coinbase.com
-binance.com
+*.paypal.com
+*.stripe.com
+*.square.com
+*.coinbase.com
+*.binance.com
 
 # 云服务
-aws.amazon.com
-cloud.google.com
-azure.microsoft.com
-cloudflare.com
-digitalocean.com
-linode.com
+*.aws.amazon.com
+*.cloud.google.com
+*.azure.microsoft.com
+*.cloudflare.com
+*.cloudflare.net
+*.digitalocean.com
+*.linode.com
 
 # CDN提供商
-cloudflare.com
-cloudflare.net
-akamai.com
-fastly.com
-maxcdn.com
-keycdn.com
-bunnycdn.com
-jsdelivr.net
-unpkg.com
-cdnjs.com
-jsdelivr.com
-amazonaws.com
-aws.amazon.com
-cloudfront.net
-s3.amazonaws.com
-azureedge.net
-azure.microsoft.com
-googleusercontent.com
-gstatic.com
-googleapis.com
-cdn.shopify.com
-shopify.com
-cdn.shopifycdn.com
+*.cloudflare.com
+*.cloudflare.net
+*.akamai.com
+*.fastly.com
+*.maxcdn.com
+*.keycdn.com
+*.bunnycdn.com
+*.jsdelivr.net
+*.unpkg.com
+*.cdnjs.com
+*.jsdelivr.com
+*.amazonaws.com
+*.aws.amazon.com
+*.cloudfront.net
+*.s3.amazonaws.com
+*.azureedge.net
+*.azure.microsoft.com
+*.googleusercontent.com
+*.gstatic.com
+*.googleapis.com
+*.cdn.shopify.com
+*.shopify.com
+*.cdn.shopifycdn.com
 
 # 开发工具
-docker.com
-kubernetes.io
-jenkins.io
-gitlab.com
-bitbucket.org
+*.docker.com
+*.kubernetes.io
+*.jenkins.io
+*.gitlab.com
+*.bitbucket.org
 
 # 其他热门
-wikipedia.org
-imdb.com
-weather.com
-zoom.us
-slack.com
-discord.com
-telegram.org
-whatsapp.com
-dropbox.com
-notion.so
-figma.com
-canva.com
+*.wikipedia.org
+*.imdb.com
+*.weather.com
+*.zoom.us
+*.slack.com
+*.discord.com
+*.telegram.org
+*.whatsapp.com
+*.dropbox.com
+*.notion.so
+*.figma.com
+*.canva.com

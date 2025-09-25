@@ -23,7 +23,7 @@
 以下是一个批量检测的实际输出示例：
 
 ```bash
-./reality-checker batch apple.com tesla.com microsoft.com
+./reality-checker csv file.csv
 ```
 
 **实际运行效果：**

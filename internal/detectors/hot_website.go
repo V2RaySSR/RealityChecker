@@ -26,7 +26,7 @@ func NewHotWebsiteStage() *HotWebsiteStage {
 func (hws *HotWebsiteStage) Execute(ctx *types.PipelineContext) error {
 	// 检测是否为热门网站
 	isHotWebsite := hws.detectHotWebsite(ctx.Domain)
-	
+
 	// 更新CDN结果
 	if ctx.Result.CDN != nil {
 		ctx.Result.CDN.IsHotWebsite = isHotWebsite
@@ -45,21 +45,70 @@ func (hws *HotWebsiteStage) Execute(ctx *types.PipelineContext) error {
 // detectHotWebsite 检测热门网站
 func (hws *HotWebsiteStage) detectHotWebsite(domain string) bool {
 	domain = strings.ToLower(domain)
-	
-	// 检查是否为热门网站
+
+	// 1. 精确匹配
 	if hws.hotWebsites[domain] {
 		return true
 	}
-	
-	// 如果域名以www.开头，也检查去掉www.的版本
+
+	// 2. 通配符匹配
+	if hws.matchWildcard(domain) {
+		return true
+	}
+
+	// 3. www.前缀处理
 	if strings.HasPrefix(domain, "www.") {
 		domainWithoutWWW := domain[4:]
-		return hws.hotWebsites[domainWithoutWWW]
+		// 精确匹配
+		if hws.hotWebsites[domainWithoutWWW] {
+			return true
+		}
+		// 通配符匹配
+		if hws.matchWildcard(domainWithoutWWW) {
+			return true
+		}
+	} else {
+		domainWithWWW := "www." + domain
+		// 精确匹配
+		if hws.hotWebsites[domainWithWWW] {
+			return true
+		}
+		// 通配符匹配
+		if hws.matchWildcard(domainWithWWW) {
+			return true
+		}
 	}
-	
-	// 如果域名不以www.开头，也检查加上www.的版本
-	domainWithWWW := "www." + domain
-	return hws.hotWebsites[domainWithWWW]
+
+	return false
+}
+
+// matchWildcard 通配符匹配
+func (hws *HotWebsiteStage) matchWildcard(domain string) bool {
+	// 遍历所有热门网站模式
+	for pattern := range hws.hotWebsites {
+		if strings.HasPrefix(pattern, "*.") {
+			// 提取通配符的基础域名
+			baseDomain := pattern[2:] // 去掉 "*."
+
+			// 检查域名是否匹配通配符模式
+			if hws.isSubdomain(domain, baseDomain) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// isSubdomain 检查是否为子域名
+func (hws *HotWebsiteStage) isSubdomain(domain, baseDomain string) bool {
+	// 1. 直接匹配：domain == baseDomain
+	if domain == baseDomain {
+		return true
+	}
+
+	// 2. 子域名匹配：domain 以 "." + baseDomain 结尾
+	suffix := "." + baseDomain
+	return strings.HasSuffix(domain, suffix)
 }
 
 // loadHotWebsites 加载热门网站列表
@@ -69,7 +118,7 @@ func (hws *HotWebsiteStage) loadHotWebsites() {
 		return
 	}
 	defer file.Close()
-	
+
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -86,7 +135,7 @@ func (hws *HotWebsiteStage) CanEarlyExit() bool {
 
 // Priority 优先级
 func (hws *HotWebsiteStage) Priority() int {
-	return 15  // 热门网站检测最后优先级 - 负面检测
+	return 9 // 热门网站检测在CDN检测之后 - 需要CDN结果
 }
 
 // Name 阶段名称
