@@ -16,6 +16,43 @@
 * **批量检测** - 支持多域名并发检测，可与RealiTLScanner配合使用
 * **智能报告** - 生成详细的检测分析报告
 
+## 📊 检测结果说明
+
+### 检测结果示例
+
+以下是一个批量检测的实际输出示例：
+
+```bash
+./reality-checker batch apple.com tesla.com microsoft.com
+```
+
+**实际运行效果：**
+
+![RealityChecker检测结果示例](RealityChecker.png)
+
+**只有满足Reality目标域名硬性条件的（TLS1.3、X25519、H2、SNI匹配、证书有效），才会在列表中显示**
+
+### CDN检测等级说明
+
+| 等级 | 含义 | 影响 |
+|------|------|------|
+| **高** | 明确使用CDN | 可以使用，但不推荐 |
+| **中** | 疑似使用CDN | 可以使用，但不推荐 |
+| **低** | 轻微CDN特征 | 可以使用，但不推荐 |
+| **-** | 未检测到CDN | 可以使用，强烈推荐 |
+
+### 热门网站说明
+
+热门网站（如 apple.com、tesla.com、microsoft.com 等）由于使用人群多，容易被识别和封禁，因此不太推荐作为 Reality 协议的目标域名。
+
+**结果分析：**
+- 所有三个域名都支持TLS 1.3、X25519、HTTP/2和SNI匹配
+- 握手时间都很快（10-67ms），证书有效期充足
+- 都使用了CDN且为热门网站，推荐度中等（***）
+- 虽然技术指标优秀，但由于CDN和热门网站特性，推荐度有所降低
+
+
+
 ## 🚀 快速开始
 
 ### 系统要求
@@ -121,42 +158,6 @@ go build -o reality-checker
 - [gfwlist.conf](https://raw.githubusercontent.com/Loyalsoldier/clash-rules/release/gfw.txt)
 - [cdn_keywords.txt](https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/cdn_keywords.txt)
 - [hot_websites.txt](https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/hot_websites.txt)
-
-
-## 📊 检测结果说明
-
-### 检测结果示例
-
-以下是一个批量检测的实际输出示例：
-
-```bash
-./reality-checker batch apple.com tesla.com microsoft.com
-```
-
-**实际运行效果：**
-
-![RealityChecker检测结果示例](RealityChecker.png)
-
-**只有满足Reality目标域名硬性条件的（TLS1.3、X25519、H2、SNI匹配、证书有效），才会在列表中显示**
-
-### CDN检测等级说明
-
-| 等级 | 含义 | 影响 |
-|------|------|------|
-| **高** | 明确使用CDN | 可以使用，但不推荐 |
-| **中** | 疑似使用CDN | 可以使用，但不推荐 |
-| **低** | 轻微CDN特征 | 可以使用，但不推荐 |
-| **-** | 未检测到CDN | 可以使用，强烈推荐 |
-
-### 热门网站说明
-
-热门网站（如 apple.com、tesla.com、microsoft.com 等）由于使用人群多，容易被识别和封禁，因此不太推荐作为 Reality 协议的目标域名。
-
-**结果分析：**
-- 所有三个域名都支持TLS 1.3、X25519、HTTP/2和SNI匹配
-- 握手时间都很快（10-67ms），证书有效期充足
-- 都使用了CDN且为热门网站，推荐度中等（***）
-- 虽然技术指标优秀，但由于CDN和热门网站特性，推荐度有所降低
 
 
 ## 🏆 致谢

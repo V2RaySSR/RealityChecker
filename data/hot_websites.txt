@@ -99,6 +99,7 @@ linode.com
 
 # CDN提供商
 cloudflare.com
+cloudflare.net
 akamai.com
 fastly.com
 maxcdn.com
@@ -108,6 +109,18 @@ jsdelivr.net
 unpkg.com
 cdnjs.com
 jsdelivr.com
+amazonaws.com
+aws.amazon.com
+cloudfront.net
+s3.amazonaws.com
+azureedge.net
+azure.microsoft.com
+googleusercontent.com
+gstatic.com
+googleapis.com
+cdn.shopify.com
+shopify.com
+cdn.shopifycdn.com
 
 # 开发工具
 docker.com
