@@ -129,13 +129,18 @@ go build -o reality-checker
 
 **1. 使用RealiTLScanner扫描VPS IP：**
 ```bash
-./RealiTLScanner -addr <VPS IP> -port 443 -thread 10 -timeout 5 -out file.csv
+./RealiTLScanner -addr <VPS IP> -port 443 -thread 100 -timeout 5 -out file.csv
 ```
 
 **2. 使用本工具检测生成的CSV文件：**
 ```bash
 ./reality-checker csv file.csv
 ```
+
+**⚠️ 重要提示：**
+- RealiTLScanner 尽量在本地运行，不要在远端
+- 多次运行RealiTLScanner时，请更改输出文件名，如：`file1.csv`、`file2.csv`、`file3.csv` 等
+- 如果使用相同的文件名，可能会导致文件导出失败或覆盖之前的扫描结果
 
 ### 查看帮助
 

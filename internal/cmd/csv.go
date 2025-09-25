@@ -17,8 +17,9 @@ func (r *RootCmd) executeCSV(csvFile string) {
 		ui.PrintErrorWithDetails(
 			fmt.Sprintf("错误：CSV文件不存在 '%s'", csvFile),
 			"请使用 RealiTLScanner 工具扫描，得到 CSV 文件",
-			"命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 10 -timeout 5 -out file.csv",
-			"（提示：RealiTLScanner 不要在VPS上面运行）",
+			"命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 100 -timeout 5 -out file.csv",
+			"（提示：RealiTLScanner 尽量在本地运行，不要在远端）",
+			"（重要：多次运行时请更改输出文件名，如 file1.csv、file2.csv 等）",
 		)
 		return
 	}
@@ -38,7 +39,9 @@ func (r *RootCmd) executeCSV(csvFile string) {
 		ui.PrintErrorWithDetails(
 			fmt.Sprintf("错误：解析CSV文件失败: %v", err),
 			"请使用 RealiTLScanner 工具扫描，得到 CSV 文件",
-			"命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 10 -timeout 5 -out file.csv",
+			"命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 100 -timeout 5 -out file.csv",
+			"（提示：RealiTLScanner 尽量在本地运行，不要在远端）",
+			"（重要：多次运行时请更改输出文件名，如 file1.csv、file2.csv 等）",
 		)
 		return
 	}
@@ -47,7 +50,9 @@ func (r *RootCmd) executeCSV(csvFile string) {
 		ui.PrintErrorWithDetails(
 			"错误：CSV文件格式错误或为空",
 			"请使用 RealiTLScanner 工具扫描，得到 CSV 文件",
-			"命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 10 -timeout 5 -out file.csv",
+			"命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 100 -timeout 5 -out file.csv",
+			"（提示：RealiTLScanner 尽量在本地运行，不要在远端）",
+			"（重要：多次运行时请更改输出文件名，如 file1.csv、file2.csv 等）",
 		)
 		return
 	}
@@ -58,7 +63,9 @@ func (r *RootCmd) executeCSV(csvFile string) {
 		ui.PrintErrorWithDetails(
 			"错误：未找到有效的域名",
 			"请使用 RealiTLScanner 工具扫描，得到 CSV 文件",
-			"命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 10 -timeout 5 -out file.csv",
+			"命令：./RealiTLScanner -addr <VPS IP> -port 443 -thread 100 -timeout 5 -out file.csv",
+			"（提示：RealiTLScanner 尽量在本地运行，不要在远端）",
+			"（重要：多次运行时请更改输出文件名，如 file1.csv、file2.csv 等）",
 		)
 		return
 	}
