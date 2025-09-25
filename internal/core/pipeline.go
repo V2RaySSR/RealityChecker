@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"sync"
 	"time"
 
 	"RealityChecker/internal/detectors"
@@ -13,21 +14,18 @@ import (
 
 // Pipeline 检测流水线
 type Pipeline struct {
-	stages    []types.DetectionStage
-	context   *types.PipelineContext
-	config    *types.Config
-	earlyExit bool
+	stages      []types.DetectionStage
+	config      *types.Config
+	earlyExit   bool
 	connections *network.ConnectionManager
-	cache       *network.CacheManager
 }
 
 // NewPipeline 创建新的检测流水线
-func NewPipeline(connections *network.ConnectionManager, cache *network.CacheManager, config *types.Config) *Pipeline {
+func NewPipeline(connections *network.ConnectionManager, config *types.Config) *Pipeline {
 	pipeline := &Pipeline{
 		config:      config,
 		earlyExit:   true,
 		connections: connections,
-		cache:       cache,
 	}
 
 	// 初始化检测阶段
@@ -39,15 +37,14 @@ func NewPipeline(connections *network.ConnectionManager, cache *network.CacheMan
 // initializeStages 初始化检测阶段
 func (p *Pipeline) initializeStages() {
 	p.stages = []types.DetectionStage{
-		detectors.NewBlockedStage(),     // 1. 被墙检测 (最高优先级)
-		detectors.NewRedirectStage(),    // 2. 重定向检测
-		detectors.NewIPResolverStage(),  // 3. IP解析
-		detectors.NewLocationStage(),    // 4. 地理位置检测
-		detectors.NewTLSStage(),         // 5. TLS特征检测
-		detectors.NewSNIStage(),         // 6. SNI检测
-		detectors.NewCertificateStage(), // 7. 证书检测
-		detectors.NewCDNStage(),         // 8. CDN检测
-		detectors.NewHotWebsiteStage(),  // 9. 热门网站检测
+		detectors.NewBlockedStage(),          // 1. 被墙检测 (最高优先级)
+		detectors.NewRedirectStage(),         // 2. 重定向检测
+		detectors.NewStatusCheckStage(),      // 3. 状态码检查
+		detectors.NewIPResolverStage(),       // 4. IP解析
+		detectors.NewLocationStage(),         // 5. 地理位置检测
+		detectors.NewLocationCheckStage(),    // 6. 地理位置检查
+		detectors.NewComprehensiveTLSStage(), // 7. 综合TLS检测 (TLS1.3、X25519、H2、SNI、证书、CDN)
+		detectors.NewHotWebsiteStage(),       // 8. 热门网站检测
 	}
 
 	// 按优先级排序
@@ -65,51 +62,15 @@ func (p *Pipeline) Execute(ctx context.Context, domain string) (*types.Detection
 		Domain:      domain,
 		StartTime:   startTime,
 		Result:      &types.DetectionResult{Domain: domain, StartTime: startTime},
-		Connections: nil, // 当前检测器不需要ConnectionManager
-		Cache:       nil, // 当前检测器不需要CacheManager
+		Connections: p.connections, // 传递连接管理器给检测器
+		Cache:       nil,           // 缓存管理器已移除
 		Config:      p.config,
+		Context:     ctx, // 传递原始context
 		EarlyExit:   false,
 	}
 
-	// 执行各个检测阶段
-	for _, stage := range p.stages {
-		select {
-		case <-ctx.Done():
-			return pipelineCtx.Result, ctx.Err()
-		default:
-		}
-
-		// 为每个阶段设置超时
-		stageCtx, cancel := context.WithTimeout(ctx, 8*time.Second)
-		done := make(chan error, 1)
-		
-		go func() {
-			done <- stage.Execute(pipelineCtx)
-		}()
-		
-		select {
-		case err := <-done:
-			cancel()
-			if err != nil {
-				pipelineCtx.Result.Error = err
-				if stage.CanEarlyExit() {
-					pipelineCtx.EarlyExit = true
-					break
-				}
-			}
-		case <-stageCtx.Done():
-			cancel()
-			pipelineCtx.Result.Error = fmt.Errorf("检测阶段 %s 超时", stage.Name())
-			pipelineCtx.EarlyExit = true
-			break
-		}
-
-		// 检查是否需要早期退出
-		if p.earlyExit && stage.CanEarlyExit() && pipelineCtx.EarlyExit {
-			pipelineCtx.Result.EarlyExit = true
-			break
-		}
-	}
+	// 并发执行检测阶段，提高检测效率
+	p.executeStagesConcurrently(ctx, pipelineCtx)
 
 	// 计算总耗时
 	pipelineCtx.Result.Duration = time.Since(startTime)
@@ -118,6 +79,94 @@ func (p *Pipeline) Execute(ctx context.Context, domain string) (*types.Detection
 	p.evaluateSuitability(pipelineCtx.Result)
 
 	return pipelineCtx.Result, nil
+}
+
+// executeStagesConcurrently 并发执行检测阶段
+func (p *Pipeline) executeStagesConcurrently(ctx context.Context, pipelineCtx *types.PipelineContext) {
+	// 将检测阶段分为两组：阻塞检测和网络检测
+	var blockingStages []types.DetectionStage
+	var networkStages []types.DetectionStage
+
+	for _, stage := range p.stages {
+		if stage.CanEarlyExit() {
+			blockingStages = append(blockingStages, stage)
+		} else {
+			networkStages = append(networkStages, stage)
+		}
+	}
+
+	// 先执行阻塞检测（被墙检测、地理位置检测等）
+	for _, stage := range blockingStages {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		if err := stage.Execute(pipelineCtx); err != nil {
+			pipelineCtx.Result.Error = err
+			if stage.CanEarlyExit() {
+				pipelineCtx.EarlyExit = true
+				return
+			}
+		}
+
+		// 检查是否需要早期退出
+		if p.earlyExit && stage.CanEarlyExit() && pipelineCtx.EarlyExit {
+			pipelineCtx.Result.EarlyExit = true
+			return
+		}
+	}
+
+	// 如果被阻塞，直接返回
+	if pipelineCtx.EarlyExit {
+		return
+	}
+
+	// 并发执行网络检测阶段
+	if len(networkStages) > 0 {
+		p.executeNetworkStagesConcurrently(ctx, pipelineCtx, networkStages)
+	}
+}
+
+// executeNetworkStagesConcurrently 并发执行网络检测阶段
+func (p *Pipeline) executeNetworkStagesConcurrently(ctx context.Context, pipelineCtx *types.PipelineContext, stages []types.DetectionStage) {
+	// 使用信号量控制网络检测的并发数
+	networkConcurrency := 4 // 网络检测使用4个并发
+	semaphore := make(chan struct{}, networkConcurrency)
+
+	var wg sync.WaitGroup
+	for i, stage := range stages {
+		wg.Add(1)
+		go func(index int, s types.DetectionStage) {
+			defer wg.Done()
+
+			// 获取信号量
+			select {
+			case semaphore <- struct{}{}:
+				defer func() {
+					<-semaphore
+				}()
+			case <-ctx.Done():
+				return
+			}
+
+			// 执行检测阶段
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						pipelineCtx.Result.Error = fmt.Errorf("检测阶段 %s panic: %v", s.Name(), r)
+					}
+				}()
+
+				if err := s.Execute(pipelineCtx); err != nil {
+					pipelineCtx.Result.Error = err
+				}
+			}()
+		}(i, stage)
+	}
+
+	wg.Wait()
 }
 
 // evaluateSuitability 评估适合性
@@ -138,7 +187,21 @@ func (p *Pipeline) evaluateSuitability(result *types.DetectionResult) {
 	if result.Network != nil && !result.Network.Accessible {
 		result.Suitable = false
 		result.Error = fmt.Errorf("网络不可达")
+		result.StatusCodeCategory = types.StatusCodeCategoryNetwork
 		return
+	}
+
+	// 检查状态码是否安全
+	if result.Network != nil && result.Network.Accessible {
+		statusCodeCategory := types.ClassifyStatusCode(result.Network.StatusCode, true)
+		result.StatusCodeCategory = statusCodeCategory
+
+		// 如果状态码不安全，标记为不适合
+		if statusCodeCategory == types.StatusCodeCategoryExcluded {
+			result.Suitable = false
+			result.Error = fmt.Errorf("状态码不自然: %d", result.Network.StatusCode)
+			return
+		}
 	}
 
 	if result.TLS != nil {

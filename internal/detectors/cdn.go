@@ -2,6 +2,7 @@ package detectors
 
 import (
 	"bufio"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -14,59 +15,45 @@ import (
 
 // CDNStage CDN检测阶段
 type CDNStage struct {
-	cnameStrongSuffix    map[string]bool
-	httpStrongHeader     map[string]bool
-	httpMediumHeader     map[string]bool
-	httpValueCdnDomains  map[string]bool
-	asnStrongExact       map[string]bool
-	nsHintSuffix         map[string]bool
-	certIssuerHint       map[string]bool
-	excludeServerTokens  map[string]bool
+	cnameStrongSuffix      map[string]bool
+	httpStrongHeader       map[string]bool
+	httpMediumHeader       map[string]bool
+	httpValueCdnDomains    map[string]bool
+	asnStrongExact         map[string]bool
+	nsHintSuffix           map[string]bool
+	certIssuerHint         map[string]bool
+	excludeServerTokens    map[string]bool
 	excludeKeywordsGeneric map[string]bool
 }
 
 // NewCDNStage 创建CDN检测阶段
 func NewCDNStage() *CDNStage {
 	stage := &CDNStage{
-		cnameStrongSuffix:    make(map[string]bool),
-		httpStrongHeader:     make(map[string]bool),
-		httpMediumHeader:     make(map[string]bool),
-		httpValueCdnDomains:  make(map[string]bool),
-		asnStrongExact:       make(map[string]bool),
-		nsHintSuffix:         make(map[string]bool),
-		certIssuerHint:       make(map[string]bool),
-		excludeServerTokens:  make(map[string]bool),
+		cnameStrongSuffix:      make(map[string]bool),
+		httpStrongHeader:       make(map[string]bool),
+		httpMediumHeader:       make(map[string]bool),
+		httpValueCdnDomains:    make(map[string]bool),
+		asnStrongExact:         make(map[string]bool),
+		nsHintSuffix:           make(map[string]bool),
+		certIssuerHint:         make(map[string]bool),
+		excludeServerTokens:    make(map[string]bool),
 		excludeKeywordsGeneric: make(map[string]bool),
 	}
 	stage.loadCDNKeywords()
 	return stage
 }
 
-// Execute 执行CDN检测
+// Execute 执行CDN检测 (已废弃 - CDN检测已合并到ComprehensiveTLSStage)
+// 保留此方法以维持接口兼容性，但不再使用
 func (cs *CDNStage) Execute(ctx *types.PipelineContext) error {
-	// 使用最终域名进行CDN检测
-	finalDomain := ctx.Domain
-	if ctx.Result.Network != nil && ctx.Result.Network.FinalDomain != "" {
-		finalDomain = ctx.Result.Network.FinalDomain
-	}
-	
-	// 检测CDN
-	isCDN, provider, confidence, evidence := cs.detectCDN(finalDomain, ctx.Result.Network)
-	
-	ctx.Result.CDN = &types.CDNResult{
-		IsCDN:       isCDN,
-		CDNProvider: provider,
-		Confidence:  confidence,
-		Evidence:    evidence,
-	}
-
+	// 此方法已废弃，CDN检测已合并到ComprehensiveTLSStage中
 	return nil
 }
 
 // detectCDN 检测CDN
 // 使用多种检测方法，按置信度从高到低进行检测
 // 高置信度方法：CNAME记录、HTTP响应头、ASN查询等
-// 中等置信度方法：NS记录、通用HTTP头等  
+// 中等置信度方法：NS记录、通用HTTP头等
 // 低置信度方法：证书签发者等
 func (cs *CDNStage) detectCDN(domain string, networkResult *types.NetworkResult) (bool, string, string, string) {
 	// 高置信度检测方法（优先级顺序）
@@ -76,37 +63,37 @@ func (cs *CDNStage) detectCDN(domain string, networkResult *types.NetworkResult)
 		func() (string, string) { return cs.checkHTTPValueCdnDomains(networkResult) },
 		func() (string, string) { return cs.checkASNStrongExact(domain) },
 	}
-	
+
 	// 中等置信度检测方法
 	mediumConfidenceChecks := []func() (string, string){
 		func() (string, string) { return cs.checkNSHintSuffix(domain) },
 		func() (string, string) { return cs.checkHTTPMediumHeader(networkResult) },
 	}
-	
+
 	// 低置信度检测方法
 	lowConfidenceChecks := []func() (string, string){
 		func() (string, string) { return cs.checkCertIssuerHint(domain) },
 	}
-	
+
 	// 按置信度顺序检测
 	for _, check := range highConfidenceChecks {
 		if provider, evidence := check(); provider != "" {
 			return true, provider, "高", evidence
 		}
 	}
-	
+
 	for _, check := range mediumConfidenceChecks {
 		if provider, evidence := check(); provider != "" {
 			return true, provider, "中", evidence
 		}
 	}
-	
+
 	for _, check := range lowConfidenceChecks {
 		if provider, evidence := check(); provider != "" {
 			return true, provider, "低", evidence
 		}
 	}
-	
+
 	return false, "", "", ""
 }
 
@@ -117,12 +104,12 @@ func (cs *CDNStage) checkCNAMEStrongSuffix(domain string) (string, string) {
 	if err != nil {
 		return "", ""
 	}
-	
+
 	cnameLower := strings.ToLower(cname)
-	
+
 	// 检查CNAME记录是否包含CDN后缀
 	cnameClean := strings.TrimSuffix(cnameLower, ".")
-	
+
 	for suffix := range cs.cnameStrongSuffix {
 		// 移除注释部分
 		cleanSuffix := strings.Split(suffix, "#")[0]
@@ -133,7 +120,7 @@ func (cs *CDNStage) checkCNAMEStrongSuffix(domain string) (string, string) {
 			return provider, fmt.Sprintf("CNAME记录特征: CNAME记录包含%s", cleanSuffix)
 		}
 	}
-	
+
 	return "", ""
 }
 
@@ -142,7 +129,7 @@ func (cs *CDNStage) checkHTTPStrongHeader(networkResult *types.NetworkResult) (s
 	if networkResult == nil || networkResult.Headers == nil {
 		return "", ""
 	}
-	
+
 	// 检查HTTP强响应头
 	for headerName := range cs.httpStrongHeader {
 		// 检查header名称
@@ -152,7 +139,7 @@ func (cs *CDNStage) checkHTTPStrongHeader(networkResult *types.NetworkResult) (s
 				return provider, fmt.Sprintf("HTTP强响应头特征: %s=%s", respHeaderName, respHeaderValue)
 			}
 		}
-		
+
 		// 检查server头（特殊处理）
 		if strings.HasPrefix(headerName, "server: ") {
 			serverValue := strings.TrimPrefix(headerName, "server: ")
@@ -164,7 +151,7 @@ func (cs *CDNStage) checkHTTPStrongHeader(networkResult *types.NetworkResult) (s
 			}
 		}
 	}
-	
+
 	return "", ""
 }
 
@@ -173,13 +160,13 @@ func (cs *CDNStage) checkASNStrongExact(domain string) (string, string) {
 	// TODO: 需要ASN查询功能
 	// 实际实现需要集成ASN查询库或API来查询真实的ASN信息
 	// 当前使用关键字库中的ASN列表，但需要真实的ASN查询功能
-	
+
 	// 解析IP地址
 	ips, err := net.LookupIP(domain)
 	if err != nil || len(ips) == 0 {
 		return "", ""
 	}
-	
+
 	// 获取第一个IPv4地址
 	var ip net.IP
 	for _, i := range ips {
@@ -188,13 +175,15 @@ func (cs *CDNStage) checkASNStrongExact(domain string) (string, string) {
 			break
 		}
 	}
-	if ip == nil {
-		ip = ips[0]
+	// 选择第一个IP进行ASN查询
+	_ = ips[0] // 暂时不使用，未来需要集成ASN查询库
+	if ip != nil {
+		_ = ip // 暂时不使用，未来需要集成ASN查询库
 	}
-	
+
 	// 这里需要真实的ASN查询，暂时返回空
 	// 未来需要集成ASN查询库，然后与cs.asnStrongExact中的关键字比较
-	
+
 	return "", ""
 }
 
@@ -203,23 +192,23 @@ func (cs *CDNStage) checkHTTPValueCdnDomains(networkResult *types.NetworkResult)
 	if networkResult == nil || networkResult.Headers == nil {
 		return "", ""
 	}
-	
+
 	// 检查HTTP响应头值中是否包含CDN域名
 	for headerName, respHeaderValue := range networkResult.Headers {
 		respHeaderValueLower := strings.ToLower(respHeaderValue)
-		
+
 		for cdnDomain := range cs.httpValueCdnDomains {
 			// 移除注释部分
 			cleanDomain := strings.Split(cdnDomain, "#")[0]
 			cleanDomain = strings.TrimSpace(cleanDomain)
-			
+
 			if strings.Contains(respHeaderValueLower, strings.ToLower(cleanDomain)) {
 				provider := cs.getProviderFromHeader(cdnDomain)
 				return provider, fmt.Sprintf("HTTP头值CDN域名特征: %s包含%s", headerName, cleanDomain)
 			}
 		}
 	}
-	
+
 	return "", ""
 }
 
@@ -230,7 +219,7 @@ func (cs *CDNStage) checkNSHintSuffix(domain string) (string, string) {
 	if err != nil {
 		return "", ""
 	}
-	
+
 	for _, ns := range nsRecords {
 		nsHost := strings.ToLower(ns.Host)
 		for hint := range cs.nsHintSuffix {
@@ -240,17 +229,17 @@ func (cs *CDNStage) checkNSHintSuffix(domain string) (string, string) {
 			}
 		}
 	}
-	
+
 	return "", ""
 }
 
 // checkCertIssuerHint 检查证书签发者提示
 func (cs *CDNStage) checkCertIssuerHint(domain string) (string, string) {
 	const (
-		certPort = ":443"
-		certTimeout = 6 * time.Second  // 进一步增加CDN证书检测超时时间，减少误判
+		certPort    = ":443"
+		certTimeout = 6 * time.Second // 进一步增加CDN证书检测超时时间，减少误判
 	)
-	
+
 	// 建立TLS连接获取证书
 	conn, err := tls.DialWithDialer(&net.Dialer{
 		Timeout: certTimeout,
@@ -261,26 +250,26 @@ func (cs *CDNStage) checkCertIssuerHint(domain string) (string, string) {
 		return "", ""
 	}
 	defer conn.Close()
-	
+
 	// 获取证书
 	cert := conn.ConnectionState().PeerCertificates[0]
-	
+
 	// 检查证书签发者
 	issuer := cert.Issuer.String()
 	issuerLower := strings.ToLower(issuer)
-	
+
 	// 使用关键字库中的证书签发者列表
 	for certIssuer := range cs.certIssuerHint {
 		// 移除注释部分
 		cleanIssuer := strings.Split(certIssuer, "#")[0]
 		cleanIssuer = strings.TrimSpace(cleanIssuer)
-		
+
 		if strings.Contains(issuerLower, strings.ToLower(cleanIssuer)) {
 			provider := cs.getProviderFromHeader(certIssuer)
 			return provider, fmt.Sprintf("证书签发者提示: %s", issuer)
 		}
 	}
-	
+
 	return "", ""
 }
 
@@ -289,7 +278,7 @@ func (cs *CDNStage) checkHTTPMediumHeader(networkResult *types.NetworkResult) (s
 	if networkResult == nil || networkResult.Headers == nil {
 		return "", ""
 	}
-	
+
 	// 检查HTTP中等响应头
 	for headerName := range cs.httpMediumHeader {
 		for respHeaderName, respHeaderValue := range networkResult.Headers {
@@ -299,7 +288,7 @@ func (cs *CDNStage) checkHTTPMediumHeader(networkResult *types.NetworkResult) (s
 			}
 		}
 	}
-	
+
 	return "", ""
 }
 
@@ -328,27 +317,26 @@ func (cs *CDNStage) getProviderFromHeader(header string) string {
 func (cs *CDNStage) loadCDNKeywords() {
 	file, err := os.Open("data/cdn_keywords.txt")
 	if err != nil {
-		fmt.Printf("[WARNING] 无法加载CDN关键字文件: %v\n", err)
 		return
 	}
 	defer file.Close()
-	
+
 	scanner := bufio.NewScanner(file)
 	currentSection := ""
 	loadedCount := 0
-	
+
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		
+
 		// 检查是否是节标题
 		if strings.HasSuffix(line, ":") {
 			currentSection = line
 			continue
 		}
-		
+
 		// 根据节标题分类加载
 		switch currentSection {
 		case "cname_strong_suffix:":
@@ -378,12 +366,11 @@ func (cs *CDNStage) loadCDNKeywords() {
 			cs.excludeKeywordsGeneric[line] = true
 		}
 	}
-	
+
 	if err := scanner.Err(); err != nil {
-		fmt.Printf("[WARNING] 读取CDN关键字文件时出错: %v\n", err)
 		return
 	}
-	
+
 	// 成功加载关键字（静默模式）
 }
 
@@ -394,10 +381,53 @@ func (cs *CDNStage) CanEarlyExit() bool {
 
 // Priority 优先级
 func (cs *CDNStage) Priority() int {
-	return 8  // CDN检测第八优先级 - 信息性检测
+	return 8 // CDN检测第八优先级 - 信息性检测
 }
 
 // Name 阶段名称
 func (cs *CDNStage) Name() string {
 	return "cdn"
+}
+
+// detectCDNWithManager 使用连接管理器检测CDN
+func (cs *CDNStage) detectCDNWithManager(ctx *types.PipelineContext, domain string, networkResult *types.NetworkResult) (bool, string, string, string) {
+	// 如果连接管理器不可用，回退到直接连接
+	if ctx.Connections == nil {
+		return cs.detectCDN(domain, networkResult)
+	}
+
+	// 使用连接管理器获取TLS连接
+	connMgr, ok := ctx.Connections.(interface {
+		GetTLSConnection(context.Context, string) (*tls.Conn, error)
+		ReturnConnection(string, net.Conn)
+	})
+	if !ok {
+		return cs.detectCDN(domain, networkResult)
+	}
+
+	tlsConn, err := connMgr.GetTLSConnection(ctx.Context, domain)
+	if err != nil {
+		// 如果连接失败，回退到原有逻辑
+		return cs.detectCDN(domain, networkResult)
+	}
+	defer connMgr.ReturnConnection(domain, tlsConn)
+
+	// 获取连接状态用于证书检测
+	state := tlsConn.ConnectionState()
+
+	// 创建增强的网络结果，包含证书信息
+	enhancedNetworkResult := networkResult
+	if enhancedNetworkResult == nil {
+		enhancedNetworkResult = &types.NetworkResult{}
+	}
+
+	// 添加证书信息到网络结果中
+	if len(state.PeerCertificates) > 0 {
+		cert := state.PeerCertificates[0]
+		enhancedNetworkResult.CertificateIssuer = cert.Issuer.String()
+		enhancedNetworkResult.CertificateSubject = cert.Subject.String()
+	}
+
+	// 使用增强的网络结果进行CDN检测
+	return cs.detectCDN(domain, enhancedNetworkResult)
 }

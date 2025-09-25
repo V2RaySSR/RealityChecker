@@ -96,7 +96,7 @@ func (bm *Manager) CheckDomains(ctx context.Context, domains []string) ([]*types
 	}
 
 	startTime := time.Now()
-	
+
 	// 使用流式检测显示实时进度
 	results, err := bm.CheckDomainsWithProgress(ctx, domains)
 	if err != nil {
@@ -116,45 +116,53 @@ func (bm *Manager) CheckDomains(ctx context.Context, domains []string) ([]*types
 func (bm *Manager) CheckDomainsWithProgress(ctx context.Context, domains []string) ([]*types.DetectionResult, error) {
 	results := make([]*types.DetectionResult, len(domains))
 	resultChan := make(chan *ProgressResult, len(domains))
-	
+
 	// 启动并发检测
 	go func() {
 		defer close(resultChan)
-		
+
 		// 使用WaitGroup控制并发
 		var wg sync.WaitGroup
-		
-		// 动态计算合适的并发数
-		concurrency := bm.calculateOptimalConcurrency(len(domains))
+
+		// 使用配置的最大并发数，提高检测效率
+		concurrency := int(bm.config.Concurrency.MaxConcurrent) // 使用配置的并发数（默认8个）
 		semaphore := make(chan struct{}, concurrency)
-		
-		// 并发控制已就绪
-		
+
 		for i, domain := range domains {
 			wg.Add(1)
 			go func(index int, domain string) {
 				defer wg.Done()
-				
+
 				// 获取信号量
-				semaphore <- struct{}{}
-				defer func() { <-semaphore }()
-				
+				select {
+				case semaphore <- struct{}{}:
+					defer func() {
+						<-semaphore
+					}()
+				case <-ctx.Done():
+					return
+				}
+
 				// 检测域名
 				result, err := bm.engine.CheckDomain(ctx, domain)
-				
+
 				// 发送结果
-				resultChan <- &ProgressResult{
+				select {
+				case resultChan <- &ProgressResult{
 					Index:  index,
 					Domain: domain,
 					Result: result,
 					Error:  err,
+				}:
+				case <-ctx.Done():
+					return
 				}
 			}(i, domain)
 		}
-		
+
 		wg.Wait()
 	}()
-	
+
 	// 收集结果并显示进度
 	completed := 0
 	for completed < len(domains) {
@@ -162,10 +170,10 @@ func (bm *Manager) CheckDomainsWithProgress(ctx context.Context, domains []strin
 		case progressResult := <-resultChan:
 			results[progressResult.Index] = progressResult.Result
 			completed++
-			
+
 			// 显示进度
 			fmt.Printf("[%s] 正在检测 [%d/%d]: %s... ", time.Now().Format("15:04:05"), completed, len(domains), progressResult.Domain)
-			
+
 			if progressResult.Error != nil {
 				fmt.Printf("失败 - %v\n", progressResult.Error)
 			} else if progressResult.Result.Suitable {
@@ -182,7 +190,7 @@ func (bm *Manager) CheckDomainsWithProgress(ctx context.Context, domains []strin
 			return nil, ctx.Err()
 		}
 	}
-	
+
 	return results, nil
 }
 
@@ -252,7 +260,7 @@ func (bm *Manager) generateBatchReport(results []*types.DetectionResult, startTi
 // formatBatchReport 格式化批量报告
 func (bm *Manager) formatBatchReport(report *types.BatchReport) string {
 	var result strings.Builder
-	
+
 	// 报告头部
 	result.WriteString(fmt.Sprintf(`
 批量检测报告
@@ -267,34 +275,78 @@ func (bm *Manager) formatBatchReport(report *types.BatchReport) string {
 		report.Summary.SuccessRate*100,
 		report.Summary.SuitabilityRate*100,
 	))
-	
+
 	// 分离适合和不适合的域名
 	var suitableResults []*types.DetectionResult
 	var unsuitableResults []*types.DetectionResult
-	
+	var excludedResults []*types.DetectionResult // 状态码不自然的域名
+
 	for _, domainResult := range report.Results {
 		if domainResult.Suitable && domainResult.Error == nil {
 			suitableResults = append(suitableResults, domainResult)
 		} else {
-			unsuitableResults = append(unsuitableResults, domainResult)
+			// 检查是否因为状态码不自然而被排除
+			if domainResult.StatusCodeCategory == types.StatusCodeCategoryExcluded {
+				excludedResults = append(excludedResults, domainResult)
+			} else {
+				unsuitableResults = append(unsuitableResults, domainResult)
+			}
 		}
 	}
-	
+
 	// 显示适合的域名表格
 	if len(suitableResults) > 0 {
 		// 按星级排序：1星在最上面，5星在最下面
 		bm.sortByRecommendationStars(suitableResults)
-		
+
 		result.WriteString("适合的域名:\n\n")
 		result.WriteString(bm.tableFormatter.FormatSuitableTable(suitableResults))
 		result.WriteString("\n")
 	}
-	
+
 	// 显示不适合的域名统计
 	if len(unsuitableResults) > 0 {
 		result.WriteString(bm.tableFormatter.FormatUnsuitableSummary(unsuitableResults))
 	}
-	
+
+	// 显示被排除的域名（状态码不自然）
+	if len(excludedResults) > 0 {
+		result.WriteString("\n")
+		result.WriteString(bm.formatExcludedDomains(excludedResults))
+	}
+
+	return result.String()
+}
+
+// formatExcludedDomains 格式化被排除的域名（状态码不自然）
+func (bm *Manager) formatExcludedDomains(excludedResults []*types.DetectionResult) string {
+	if len(excludedResults) == 0 {
+		return ""
+	}
+
+	var result strings.Builder
+	result.WriteString(fmt.Sprintf("状态码不自然的域名 (%d个):\n", len(excludedResults)))
+
+	// 统计各种状态码
+	statusCodeCounts := make(map[int]int)
+	for _, domainResult := range excludedResults {
+		if domainResult.Network != nil {
+			statusCodeCounts[domainResult.Network.StatusCode]++
+		}
+	}
+
+	// 按状态码排序显示
+	var statusCodes []int
+	for statusCode := range statusCodeCounts {
+		statusCodes = append(statusCodes, statusCode)
+	}
+	sort.Ints(statusCodes)
+
+	for _, statusCode := range statusCodes {
+		count := statusCodeCounts[statusCode]
+		result.WriteString(fmt.Sprintf("   - %d个状态码 %d\n", count, statusCode))
+	}
+
 	return result.String()
 }
 
@@ -342,14 +394,14 @@ func (bm *Manager) sortByRecommendationStars(results []*types.DetectionResult) {
 // calculateStars 计算域名的推荐星级数量
 func (bm *Manager) calculateStars(result *types.DetectionResult) int {
 	stars := 0
-	
+
 	// 1. TLS硬性条件检查 (TLS1.3 + X25519 + H2 + SNI匹配)
-	if result.TLS != nil && result.TLS.SupportsTLS13 && 
-	   result.TLS.SupportsX25519 && result.TLS.SupportsHTTP2 &&
-	   result.SNI != nil && result.SNI.SNIMatch {
+	if result.TLS != nil && result.TLS.SupportsTLS13 &&
+		result.TLS.SupportsX25519 && result.TLS.SupportsHTTP2 &&
+		result.SNI != nil && result.SNI.SNIMatch {
 		stars++
 	}
-	
+
 	// 2. 握手时间延迟小 (<= 200ms)
 	if result.TLS != nil && result.TLS.HandshakeTime > 0 {
 		handshakeMs := int(result.TLS.HandshakeTime.Milliseconds())
@@ -357,23 +409,23 @@ func (bm *Manager) calculateStars(result *types.DetectionResult) int {
 			stars++
 		}
 	}
-	
+
 	// 3. 没有CDN (不使用CDN更安全)
 	if result.CDN == nil || !result.CDN.IsCDN {
 		stars++
 	}
-	
+
 	// 4. 不是热门网站 (热门网站不推荐作为Reality目标)
 	if result.CDN != nil && !result.CDN.IsHotWebsite {
 		stars++
 	}
-	
+
 	// 5. 证书时间长 (>= 60天)
 	if result.Certificate != nil && result.Certificate.Valid {
 		if result.Certificate.DaysUntilExpiry >= 60 {
 			stars++
 		}
 	}
-	
+
 	return stars
 }

@@ -3,10 +3,10 @@ package detectors
 import (
 	"fmt"
 	"net"
-	"strings"
+
+	"RealityChecker/internal/types"
 
 	"github.com/oschwald/geoip2-golang"
-	"RealityChecker/internal/types"
 )
 
 // LocationStage 地理位置检测阶段
@@ -23,6 +23,7 @@ func NewLocationStage() *LocationStage {
 
 // Execute 执行地理位置检测
 func (ls *LocationStage) Execute(ctx *types.PipelineContext) error {
+
 	// 解析IP地址
 	ip, err := ls.resolveIP(ctx.Domain)
 	if err != nil {
@@ -31,7 +32,7 @@ func (ls *LocationStage) Execute(ctx *types.PipelineContext) error {
 
 	// 获取地理位置
 	country, isDomestic := ls.getLocation(ip)
-	
+
 	ctx.Result.Location = &types.LocationResult{
 		Country:    country,
 		IsDomestic: isDomestic,
@@ -52,25 +53,25 @@ func (ls *LocationStage) resolveIP(domain string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	if len(ips) == 0 {
 		return "", fmt.Errorf("未找到IP地址")
 	}
-	
+
 	// 优先选择IPv4地址
 	for _, ip := range ips {
 		if ip.To4() != nil {
 			return ip.String(), nil
 		}
 	}
-	
+
 	return ips[0].String(), nil
 }
 
 // getLocation 获取地理位置
 func (ls *LocationStage) getLocation(ip string) (string, bool) {
 	// 注意：这里传入的是IP地址，不是域名，所以不需要检查域名特征
-	
+
 	// 使用GeoIP数据库
 	if ls.geoipDB != nil {
 		record, err := ls.geoipDB.Country(net.ParseIP(ip))
@@ -82,24 +83,13 @@ func (ls *LocationStage) getLocation(ip string) (string, bool) {
 					country = record.Country.IsoCode
 				}
 			}
-			
+
 			isDomestic := (country == "中国" || country == "CN")
 			return country, isDomestic
 		}
 	}
-	
-	return "未知", false
-}
 
-// isDomesticDomain 检查是否为国内域名
-func (ls *LocationStage) isDomesticDomain(domain string) bool {
-	// 只检查.cn后缀，不使用硬编码的域名列表
-	// 具体的国内域名判断应该基于GeoIP数据库的IP地址查询结果
-	if strings.HasSuffix(domain, ".cn") {
-		return true
-	}
-	
-	return false
+	return "未知", false
 }
 
 // loadGeoIPDatabase 加载GeoIP数据库
@@ -118,7 +108,7 @@ func (ls *LocationStage) CanEarlyExit() bool {
 
 // Priority 优先级
 func (ls *LocationStage) Priority() int {
-	return 4  // 地理位置检测第四优先级
+	return 4 // 地理位置检测第四优先级
 }
 
 // Name 阶段名称

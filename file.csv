@@ -1,0 +1,68 @@
+IP,ORIGIN,CERT_DOMAIN,CERT_ISSUER,GEO_CODE
+103.103.245.124,103.103.245.124,cwangrz.top,"Let's Encrypt",HK
+103.103.245.129,103.103.245.129,*.bozai.cc,"ZeroSSL",HK
+103.103.245.128,103.103.245.128,*.weiwei132.uk,"Let's Encrypt",HK
+103.103.245.109,103.103.245.109,styles.redditmedia.com,"Google Trust Services LLC",HK
+103.103.245.94,103.103.245.94,001.90009000.xyz,"Let's Encrypt",HK
+103.103.245.172,103.103.245.172,voll.996969.xyz,"Let's Encrypt",HK
+103.103.245.175,103.103.245.175,20291010.xyz,"Let's Encrypt",HK
+103.103.245.81,103.103.245.81,mp.gihnius.net,"Let's Encrypt",HK
+103.103.245.71,103.103.245.71,010.70007000.xyz,"Let's Encrypt",HK
+103.103.245.191,103.103.245.191,hk.zpsonic.xyz,"Let's Encrypt",HK
+103.103.245.58,103.103.245.58,cloudflare.net,"Let's Encrypt",HK
+103.103.245.205,103.103.245.205,voll.hzwel.com,"Let's Encrypt",HK
+103.103.245.211,103.103.245.211,CloudFlare Origin Certificate,"CloudFlare, Inc.",HK
+103.103.245.223,103.103.245.223,portalhk.bricksmelt.com,"Let's Encrypt",HK
+103.103.245.34,103.103.245.34,xindiegame.top,"Let's Encrypt",HK
+103.103.245.20,103.103.245.20,780228.xyz,"Let's Encrypt",HK
+103.103.245.245,103.103.245.245,eaglemoe.com,"Google Trust Services",HK
+103.103.245.9,103.103.245.9,hk.needyou.cc,"Let's Encrypt",HK
+103.103.245.250,103.103.245.250,5250.vrxdy8.com,"Let's Encrypt",HK
+103.103.245.6,103.103.245.6,cetacloud.irort.top,"ZeroSSL",HK
+103.103.245.252,103.103.245.252,vcmihk103.ra9.top,"Let's Encrypt",HK
+103.103.245.5,103.103.245.5,cmi2.xyz88.cc,"ZeroSSL",HK
+103.103.245.254,103.103.245.254,youcris.site,"Let's Encrypt",HK
+103.103.245.2,103.103.245.2,realher.us,"Let's Encrypt",HK
+103.103.244.144,103.103.244.144,*.douyincdn.com,"DigiCert Inc",RU
+103.103.244.143,103.103.244.143,*.douyincdn.com,"DigiCert Inc",RU
+103.103.244.142,103.103.244.142,NONE,"NONE",RU
+103.103.244.141,103.103.244.141,NONE,"NONE",RU
+103.103.244.140,103.103.244.140,NONE,"NONE",RU
+103.103.244.139,103.103.244.139,NONE,"NONE",RU
+103.103.244.138,103.103.244.138,NONE,"NONE",RU
+103.103.244.137,103.103.244.137,NONE,"NONE",RU
+103.103.244.136,103.103.244.136,NONE,"NONE",RU
+103.103.244.135,103.103.244.135,NONE,"NONE",RU
+103.103.244.134,103.103.244.134,NONE,"NONE",RU
+103.103.244.133,103.103.244.133,NONE,"NONE",RU
+103.103.244.132,103.103.244.132,NONE,"NONE",RU
+103.103.244.131,103.103.244.131,NONE,"NONE",RU
+103.103.244.130,103.103.244.130,NONE,"NONE",RU
+103.103.244.112,103.103.244.112,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.111,103.103.244.111,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.110,103.103.244.110,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.109,103.103.244.109,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.108,103.103.244.108,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.107,103.103.244.107,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.103,103.103.244.103,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.102,103.103.244.102,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.98,103.103.244.98,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.94,103.103.244.94,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.95,103.103.244.95,minio.sk-robot.com,"Amazon",RU
+103.103.244.92,103.103.244.92,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.91,103.103.244.91,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.88,103.103.244.88,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.87,103.103.244.87,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.78,103.103.244.78,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.71,103.103.244.71,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.70,103.103.244.70,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.66,103.103.244.66,*.zga.zenlayer.net,"Let's Encrypt",RU
+103.103.244.30,103.103.244.30,*.ecn.zenlayer.net,"Let's Encrypt",RU
+103.103.244.28,103.103.244.28,*.ecn.zenlayer.net,"Let's Encrypt",RU
+103.103.244.29,103.103.244.29,*.ecn.zenlayer.net,"Let's Encrypt",RU
+103.103.244.27,103.103.244.27,*.ecn.zenlayer.net,"Let's Encrypt",RU
+103.103.244.6,103.103.244.6,*.ecn.zenlayer.net,"Let's Encrypt",RU
+103.103.244.5,103.103.244.5,*.ecn.zenlayer.net,"Let's Encrypt",RU
+103.103.244.4,103.103.244.4,*.bilivideo.com,"GlobalSign nv-sa",RU
+103.103.244.3,103.103.244.3,*.ecn.zenlayer.net,"Let's Encrypt",RU
+103.103.244.2,103.103.244.2,*.ecn.zenlayer.net,"Let's Encrypt",RU

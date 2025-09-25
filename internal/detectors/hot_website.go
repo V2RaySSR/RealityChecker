@@ -24,8 +24,15 @@ func NewHotWebsiteStage() *HotWebsiteStage {
 
 // Execute 执行热门网站检测
 func (hws *HotWebsiteStage) Execute(ctx *types.PipelineContext) error {
+
+	// 使用最终域名进行热门网站检测
+	finalDomain := ctx.Domain
+	if ctx.Result.Network != nil && ctx.Result.Network.FinalDomain != "" {
+		finalDomain = ctx.Result.Network.FinalDomain
+	}
+
 	// 检测是否为热门网站
-	isHotWebsite := hws.detectHotWebsite(ctx.Domain)
+	isHotWebsite := hws.detectHotWebsite(finalDomain)
 
 	// 更新CDN结果
 	if ctx.Result.CDN != nil {

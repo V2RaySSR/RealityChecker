@@ -12,16 +12,25 @@ import (
 
 // ConnectionManager 连接管理器
 type ConnectionManager struct {
-	config      *types.Config
-	connections map[string]*ConnectionPool
-	mu          sync.RWMutex
-	stats       *types.ConnectionStats
+	config          *types.Config
+	httpConnections map[string]*HTTPConnectionPool // HTTP连接池
+	tlsConnections  map[string]*TLSConnectionPool  // TLS连接池
+	mu              sync.RWMutex
+	stats           *types.ConnectionStats
 }
 
-// ConnectionPool 连接池
-type ConnectionPool struct {
+// HTTPConnectionPool HTTP连接池
+type HTTPConnectionPool struct {
 	connections chan net.Conn
-	tlsConnections chan *tls.Conn
+	maxSize     int
+	domain      string
+	created     time.Time
+	mu          sync.RWMutex
+}
+
+// TLSConnectionPool TLS连接池
+type TLSConnectionPool struct {
+	connections chan *tls.Conn
 	maxSize     int
 	domain      string
 	created     time.Time
@@ -31,8 +40,9 @@ type ConnectionPool struct {
 // NewConnectionManager 创建连接管理器
 func NewConnectionManager(config *types.Config) *ConnectionManager {
 	return &ConnectionManager{
-		config:      config,
-		connections: make(map[string]*ConnectionPool),
+		config:          config,
+		httpConnections: make(map[string]*HTTPConnectionPool),
+		tlsConnections:  make(map[string]*TLSConnectionPool),
 		stats: &types.ConnectionStats{
 			ActiveConnections: 0,
 			TotalConnections:  0,
@@ -53,272 +63,190 @@ func (cm *ConnectionManager) Stop() error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	// 关闭所有连接池
-	for _, pool := range cm.connections {
-		pool.Close()
+	// 关闭所有HTTP连接
+	for _, pool := range cm.httpConnections {
+		close(pool.connections)
+		for conn := range pool.connections {
+			conn.Close()
+		}
 	}
-	cm.connections = make(map[string]*ConnectionPool)
-	
+	cm.httpConnections = make(map[string]*HTTPConnectionPool)
+
+	// 关闭所有TLS连接
+	for _, pool := range cm.tlsConnections {
+		close(pool.connections)
+		for conn := range pool.connections {
+			conn.Close()
+		}
+	}
+	cm.tlsConnections = make(map[string]*TLSConnectionPool)
+
 	return nil
 }
 
-// GetConnection 获取连接
-func (cm *ConnectionManager) GetConnection(ctx context.Context, domain string) (net.Conn, error) {
+// GetHTTPConnection 获取HTTP连接
+func (cm *ConnectionManager) GetHTTPConnection(ctx context.Context, domain string) (net.Conn, error) {
+	// 总是创建新的HTTP连接
+	const httpPort = ":80"
+	conn, err := net.DialTimeout("tcp", domain+httpPort, cm.config.Network.Timeout)
+	if err != nil {
+		cm.mu.Lock()
+		cm.stats.FailedConnections++
+		cm.mu.Unlock()
+		return nil, err
+	}
 	cm.mu.Lock()
-	defer cm.mu.Unlock()
-
-	pool, exists := cm.connections[domain]
-	if !exists {
-		const poolMultiplier = 2 // 连接池大小倍数
-		poolSize := int(cm.config.Concurrency.MaxConcurrent) * poolMultiplier
-		pool = &ConnectionPool{
-			connections: make(chan net.Conn, poolSize),
-			maxSize:     poolSize,
-			domain:      domain,
-			created:     time.Now(),
-		}
-		cm.connections[domain] = pool
-	}
-
-	select {
-	case conn := <-pool.connections:
-		// 复用现有连接
-		cm.stats.ActiveConnections++
-		return conn, nil
-	default:
-		// 创建新连接
-		const tlsPort = ":443"
-		conn, err := net.DialTimeout("tcp", domain+tlsPort, cm.config.Network.Timeout)
-		if err != nil {
-			cm.stats.FailedConnections++
-			return nil, err
-		}
-		cm.stats.TotalConnections++
-		cm.stats.ActiveConnections++
-		return conn, nil
-	}
+	cm.stats.TotalConnections++
+	cm.stats.ActiveConnections++
+	cm.mu.Unlock()
+	return conn, nil
 }
 
 // GetTLSConnection 获取TLS连接
 func (cm *ConnectionManager) GetTLSConnection(ctx context.Context, domain string) (*tls.Conn, error) {
-	conn, err := cm.GetConnection(ctx, domain)
+	// 总是创建新的TLS连接，确保ALPN协商正确
+	const tlsPort = ":443"
+	tcpConn, err := net.DialTimeout("tcp", domain+tlsPort, cm.config.Network.Timeout)
 	if err != nil {
+		cm.mu.Lock()
+		cm.stats.FailedConnections++
+		cm.mu.Unlock()
 		return nil, err
 	}
 
-	tlsConn := tls.Client(conn, &tls.Config{
+	// 创建TLS连接
+	tlsConn := tls.Client(tcpConn, &tls.Config{
 		ServerName: domain,
-		NextProtos: []string{"h2", "http/1.1"},
+		NextProtos: []string{"h2", "http/1.1"}, // h2优先
 	})
 
+	// 执行TLS握手
 	if err := tlsConn.Handshake(); err != nil {
-		conn.Close()
+		tcpConn.Close()
+		cm.mu.Lock()
 		cm.stats.FailedConnections++
+		cm.mu.Unlock()
 		return nil, err
 	}
 
+	cm.mu.Lock()
+	cm.stats.TotalConnections++
+	cm.stats.ActiveConnections++
+	cm.mu.Unlock()
 	return tlsConn, nil
 }
 
-// ReturnConnection 归还连接
-func (cm *ConnectionManager) ReturnConnection(domain string, conn net.Conn) {
-	cm.mu.RLock()
-	pool, exists := cm.connections[domain]
-	cm.mu.RUnlock()
-
-	if !exists {
-		conn.Close()
-		return
+// GetX25519TLSConnection 获取强制X25519的TLS连接
+func (cm *ConnectionManager) GetX25519TLSConnection(ctx context.Context, domain string) (*tls.Conn, error) {
+	// 创建强制X25519的TLS连接
+	const tlsPort = ":443"
+	tcpConn, err := net.DialTimeout("tcp", domain+tlsPort, cm.config.Network.Timeout)
+	if err != nil {
+		cm.mu.Lock()
+		cm.stats.FailedConnections++
+		cm.mu.Unlock()
+		return nil, err
 	}
 
-	select {
-	case pool.connections <- conn:
+	// 创建强制X25519的TLS连接
+	tlsConn := tls.Client(tcpConn, &tls.Config{
+		ServerName:       domain,
+		NextProtos:       []string{"h2", "http/1.1"},
+		CurvePreferences: []tls.CurveID{tls.X25519}, // 强制X25519
+	})
+
+	// 执行TLS握手
+	if err := tlsConn.Handshake(); err != nil {
+		tcpConn.Close()
 		cm.mu.Lock()
-		cm.stats.ActiveConnections--
+		cm.stats.FailedConnections++
 		cm.mu.Unlock()
-	default:
-		// 连接池已满，关闭连接
+		return nil, err
+	}
+
+	cm.mu.Lock()
+	cm.stats.TotalConnections++
+	cm.stats.ActiveConnections++
+	cm.mu.Unlock()
+	return tlsConn, nil
+}
+
+// CloseConnection 关闭连接
+func (cm *ConnectionManager) CloseConnection(conn net.Conn) {
+	if conn != nil {
 		conn.Close()
 		cm.mu.Lock()
 		cm.stats.ActiveConnections--
 		cm.mu.Unlock()
+	}
+}
+
+// CloseTLSConnection 关闭TLS连接
+func (cm *ConnectionManager) CloseTLSConnection(conn *tls.Conn) {
+	if conn != nil {
+		conn.Close()
+		cm.mu.Lock()
+		cm.stats.ActiveConnections--
+		cm.mu.Unlock()
+	}
+}
+
+// GetStats 获取连接统计信息
+func (cm *ConnectionManager) GetStats() *types.ConnectionStats {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+	return &types.ConnectionStats{
+		ActiveConnections: cm.stats.ActiveConnections,
+		TotalConnections:  cm.stats.TotalConnections,
+		FailedConnections: cm.stats.FailedConnections,
 	}
 }
 
 // cleanupConnections 清理过期连接
 func (cm *ConnectionManager) cleanupConnections() {
-	const cleanupInterval = 5 * time.Minute
-	ticker := time.NewTicker(cleanupInterval)
+	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
 		cm.mu.Lock()
 		now := time.Now()
-		for domain, pool := range cm.connections {
-			if now.Sub(pool.created) > cm.config.Cache.TTL {
-				pool.Close()
-				delete(cm.connections, domain)
+
+		// 清理HTTP连接池
+		for domain, pool := range cm.httpConnections {
+			if now.Sub(pool.created) > 5*time.Minute {
+				// 先关闭所有连接
+				for {
+					select {
+					case conn := <-pool.connections:
+						conn.Close()
+					default:
+						goto httpCleanupDone
+					}
+				}
+			httpCleanupDone:
+				close(pool.connections)
+				delete(cm.httpConnections, domain)
 			}
 		}
+
+		// 清理TLS连接池
+		for domain, pool := range cm.tlsConnections {
+			if now.Sub(pool.created) > 5*time.Minute {
+				// 先关闭所有连接
+				for {
+					select {
+					case conn := <-pool.connections:
+						conn.Close()
+					default:
+						goto tlsCleanupDone
+					}
+				}
+			tlsCleanupDone:
+				close(pool.connections)
+				delete(cm.tlsConnections, domain)
+			}
+		}
+
 		cm.mu.Unlock()
 	}
-}
-
-// Close 关闭连接池
-func (cp *ConnectionPool) Close() {
-	cp.mu.Lock()
-	defer cp.mu.Unlock()
-
-	// 关闭所有连接
-	close(cp.connections)
-	for conn := range cp.connections {
-		conn.Close()
-	}
-}
-
-// GetStats 获取统计信息
-func (cm *ConnectionManager) GetStats() *types.ConnectionStats {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-	return cm.stats
-}
-
-// CacheManager 缓存管理器
-type CacheManager struct {
-	config     *types.Config
-	dnsCache   map[string]*DNSCacheEntry
-	resultCache map[string]*ResultCacheEntry
-	mu         sync.RWMutex
-	stats      *types.CacheStats
-}
-
-// DNSCacheEntry DNS缓存条目
-type DNSCacheEntry struct {
-	IPs       []string
-	ExpiresAt time.Time
-}
-
-// ResultCacheEntry 结果缓存条目
-type ResultCacheEntry struct {
-	Result    *types.DetectionResult
-	ExpiresAt time.Time
-}
-
-// NewCacheManager 创建缓存管理器
-func NewCacheManager(config *types.Config) *CacheManager {
-	return &CacheManager{
-		config:       config,
-		dnsCache:     make(map[string]*DNSCacheEntry),
-		resultCache:  make(map[string]*ResultCacheEntry),
-		stats: &types.CacheStats{
-			DNSCacheSize:   0,
-			ResultCacheSize: 0,
-			CDNCacheSize:   0,
-			HitRate:        0.0,
-		},
-	}
-}
-
-// Start 启动缓存管理器
-func (cm *CacheManager) Start() error {
-	// 启动缓存清理协程
-	go cm.cleanupCache()
-	return nil
-}
-
-// Stop 停止缓存管理器
-func (cm *CacheManager) Stop() error {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-	cm.dnsCache = make(map[string]*DNSCacheEntry)
-	cm.resultCache = make(map[string]*ResultCacheEntry)
-	return nil
-}
-
-// GetDNS 获取DNS缓存
-func (cm *CacheManager) GetDNS(domain string) ([]string, bool) {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-
-	entry, exists := cm.dnsCache[domain]
-	if !exists || time.Now().After(entry.ExpiresAt) {
-		return nil, false
-	}
-
-	cm.stats.HitRate = 0.8 // 简化计算
-	return entry.IPs, true
-}
-
-// SetDNS 设置DNS缓存
-func (cm *CacheManager) SetDNS(domain string, ips []string) {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-
-	cm.dnsCache[domain] = &DNSCacheEntry{
-		IPs:       ips,
-		ExpiresAt: time.Now().Add(cm.config.Cache.TTL),
-	}
-	cm.stats.DNSCacheSize = len(cm.dnsCache)
-}
-
-// GetResult 获取结果缓存
-func (cm *CacheManager) GetResult(domain string) (*types.DetectionResult, bool) {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-
-	entry, exists := cm.resultCache[domain]
-	if !exists || time.Now().After(entry.ExpiresAt) {
-		return nil, false
-	}
-
-	return entry.Result, true
-}
-
-// SetResult 设置结果缓存
-func (cm *CacheManager) SetResult(domain string, result *types.DetectionResult) {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-
-	cm.resultCache[domain] = &ResultCacheEntry{
-		Result:    result,
-		ExpiresAt: time.Now().Add(cm.config.Cache.TTL),
-	}
-	cm.stats.ResultCacheSize = len(cm.resultCache)
-}
-
-// cleanupCache 清理过期缓存
-func (cm *CacheManager) cleanupCache() {
-	const cacheCleanupInterval = 1 * time.Minute
-	ticker := time.NewTicker(cacheCleanupInterval)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		cm.mu.Lock()
-		now := time.Now()
-		
-		// 清理DNS缓存
-		for domain, entry := range cm.dnsCache {
-			if now.After(entry.ExpiresAt) {
-				delete(cm.dnsCache, domain)
-			}
-		}
-		
-		// 清理结果缓存
-		for domain, entry := range cm.resultCache {
-			if now.After(entry.ExpiresAt) {
-				delete(cm.resultCache, domain)
-			}
-		}
-		
-		cm.stats.DNSCacheSize = len(cm.dnsCache)
-		cm.stats.ResultCacheSize = len(cm.resultCache)
-		cm.mu.Unlock()
-	}
-}
-
-// GetStats 获取统计信息
-func (cm *CacheManager) GetStats() *types.CacheStats {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-	return cm.stats
 }

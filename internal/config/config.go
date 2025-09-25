@@ -5,15 +5,16 @@ import (
 	"os"
 	"time"
 
-	"gopkg.in/yaml.v3"
 	"RealityChecker/internal/types"
+
+	"gopkg.in/yaml.v3"
 )
 
 // LoadConfig 加载配置
 func LoadConfig(configPath string) (*types.Config, error) {
 	// 获取默认配置
 	config := getDefaultConfig()
-	
+
 	// 如果提供了配置文件路径，尝试加载
 	if configPath != "" {
 		if err := loadConfigFromFile(config, configPath); err != nil {
@@ -27,7 +28,7 @@ func LoadConfig(configPath string) (*types.Config, error) {
 			"./config.yaml",
 			"./config.yml",
 		}
-		
+
 		for _, path := range defaultPaths {
 			if _, err := os.Stat(path); err == nil {
 				if err := loadConfigFromFile(config, path); err == nil {
@@ -36,7 +37,7 @@ func LoadConfig(configPath string) (*types.Config, error) {
 			}
 		}
 	}
-	
+
 	// 验证并设置默认值
 	validateAndSetDefaults(config)
 	return config, nil
@@ -48,22 +49,22 @@ func loadConfigFromFile(config *types.Config, filePath string) error {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return fmt.Errorf("配置文件不存在: %s", filePath)
 	}
-	
+
 	// 读取文件内容
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("读取配置文件失败: %v", err)
 	}
-	
+
 	// 解析YAML
 	var fileConfig types.Config
 	if err := yaml.Unmarshal(data, &fileConfig); err != nil {
 		return fmt.Errorf("解析配置文件失败: %v", err)
 	}
-	
+
 	// 合并配置（文件配置覆盖默认配置）
 	mergeConfig(config, &fileConfig)
-	
+
 	return nil
 }
 
@@ -79,7 +80,7 @@ func mergeConfig(defaultConfig *types.Config, fileConfig *types.Config) {
 	if len(fileConfig.Network.DNSServers) > 0 {
 		defaultConfig.Network.DNSServers = fileConfig.Network.DNSServers
 	}
-	
+
 	// TLS配置
 	if fileConfig.TLS.MinVersion > 0 {
 		defaultConfig.TLS.MinVersion = fileConfig.TLS.MinVersion
@@ -87,7 +88,7 @@ func mergeConfig(defaultConfig *types.Config, fileConfig *types.Config) {
 	if fileConfig.TLS.MaxVersion > 0 {
 		defaultConfig.TLS.MaxVersion = fileConfig.TLS.MaxVersion
 	}
-	
+
 	// 并发配置
 	if fileConfig.Concurrency.MaxConcurrent > 0 {
 		defaultConfig.Concurrency.MaxConcurrent = fileConfig.Concurrency.MaxConcurrent
@@ -98,14 +99,14 @@ func mergeConfig(defaultConfig *types.Config, fileConfig *types.Config) {
 	if fileConfig.Concurrency.CacheTTL > 0 {
 		defaultConfig.Concurrency.CacheTTL = fileConfig.Concurrency.CacheTTL
 	}
-	
+
 	// 输出配置
 	if fileConfig.Output.Format != "" {
 		defaultConfig.Output.Format = fileConfig.Output.Format
 	}
 	defaultConfig.Output.Color = fileConfig.Output.Color
 	defaultConfig.Output.Verbose = fileConfig.Output.Verbose
-	
+
 	// 缓存配置
 	defaultConfig.Cache.DNSEnabled = fileConfig.Cache.DNSEnabled
 	defaultConfig.Cache.ResultEnabled = fileConfig.Cache.ResultEnabled
@@ -115,7 +116,7 @@ func mergeConfig(defaultConfig *types.Config, fileConfig *types.Config) {
 	if fileConfig.Cache.MaxSize > 0 {
 		defaultConfig.Cache.MaxSize = fileConfig.Cache.MaxSize
 	}
-	
+
 	// 批量配置
 	defaultConfig.Batch.StreamOutput = fileConfig.Batch.StreamOutput
 	defaultConfig.Batch.ProgressBar = fileConfig.Batch.ProgressBar
@@ -127,12 +128,11 @@ func mergeConfig(defaultConfig *types.Config, fileConfig *types.Config) {
 	}
 }
 
-
 // getDefaultConfig 获取默认配置
 func getDefaultConfig() *types.Config {
 	return &types.Config{
 		Network: types.NetworkConfig{
-			Timeout:    5 * time.Second,
+			Timeout:    3 * time.Second, // 减少到3秒
 			Retries:    1,
 			DNSServers: []string{"8.8.8.8", "1.1.1.1"},
 		},
@@ -142,7 +142,7 @@ func getDefaultConfig() *types.Config {
 		},
 		Concurrency: types.ConcurrencyConfig{
 			MaxConcurrent: 8,
-			CheckTimeout:  5 * time.Second,
+			CheckTimeout:  3 * time.Second, // 减少到3秒
 			CacheTTL:      5 * time.Minute,
 		},
 		Output: types.OutputConfig{
@@ -218,4 +218,3 @@ func validateAndSetDefaults(config *types.Config) {
 		config.Batch.Timeout = 60 * time.Second
 	}
 }
-

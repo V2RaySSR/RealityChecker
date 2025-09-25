@@ -27,7 +27,7 @@ func NewBlockedStage() *BlockedStage {
 func (bs *BlockedStage) Execute(ctx *types.PipelineContext) error {
 	// 检查是否被墙
 	isBlocked, reason := bs.checkBlocked(ctx.Domain)
-	
+
 	ctx.Result.Blocked = &types.BlockedResult{
 		IsBlocked:      isBlocked,
 		BlockedReasons: []string{reason},
@@ -38,19 +38,18 @@ func (bs *BlockedStage) Execute(ctx *types.PipelineContext) error {
 		ctx.EarlyExit = true
 		return fmt.Errorf("域名被墙（%s）", reason)
 	}
-
 	return nil
 }
 
 // checkBlocked 检查是否被墙
 func (bs *BlockedStage) checkBlocked(domain string) (bool, string) {
 	domain = strings.ToLower(domain)
-	
+
 	// 检查GFWList
 	if bs.gfwlist[domain] {
 		return true, "仅参考黑名单"
 	}
-	
+
 	// 检查通配符匹配
 	parts := strings.Split(domain, ".")
 	for i := 0; i < len(parts); i++ {
@@ -59,7 +58,7 @@ func (bs *BlockedStage) checkBlocked(domain string) (bool, string) {
 			return true, fmt.Sprintf("通配符匹配: %s", wildcard)
 		}
 	}
-	
+
 	return false, ""
 }
 
@@ -70,30 +69,28 @@ func (bs *BlockedStage) loadGFWList() {
 		return
 	}
 	defer file.Close()
-	
+
 	scanner := bufio.NewScanner(file)
 	inPayload := false
-	
+
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		
+
 		if line == "payload:" {
 			inPayload = true
 			continue
 		}
-		
+
 		if !inPayload {
 			continue
 		}
-		
+
 		if strings.HasPrefix(line, "- '") && strings.HasSuffix(line, "'") {
 			domain := strings.TrimPrefix(line, "- '")
 			domain = strings.TrimSuffix(domain, "'")
-			
-			if strings.HasPrefix(domain, "+.") {
-				domain = strings.TrimPrefix(domain, "+.")
-			}
-			
+
+			domain = strings.TrimPrefix(domain, "+.")
+
 			if domain != "" {
 				bs.gfwlist[domain] = true
 			}
@@ -108,7 +105,7 @@ func (bs *BlockedStage) CanEarlyExit() bool {
 
 // Priority 优先级
 func (bs *BlockedStage) Priority() int {
-	return 1  // 被墙检测优先级最高
+	return 1 // 被墙检测优先级最高
 }
 
 // Name 阶段名称

@@ -1,43 +1,92 @@
 package types
 
 import (
+	"context"
 	"time"
 )
 
 // DetectionResult 检测结果
 type DetectionResult struct {
-	Domain            string            `json:"domain"`
-	Index             int               `json:"index"`
-	StartTime         time.Time         `json:"start_time"`
-	Duration          time.Duration     `json:"duration"`
-	Suitable          bool              `json:"suitable"`
-	Error             error             `json:"error,omitempty"`
-	HardRequirementsMet bool            `json:"hard_requirements_met"`
-	EarlyExit         bool              `json:"early_exit"` // 是否早期退出
-	
+	Domain              string        `json:"domain"`
+	Index               int           `json:"index"`
+	StartTime           time.Time     `json:"start_time"`
+	Duration            time.Duration `json:"duration"`
+	Suitable            bool          `json:"suitable"`
+	Error               error         `json:"error,omitempty"`
+	HardRequirementsMet bool          `json:"hard_requirements_met"`
+	EarlyExit           bool          `json:"early_exit"`                     // 是否早期退出
+	StatusCodeCategory  string        `json:"status_code_category,omitempty"` // 状态码分类
+
 	// 检测结果
-	Network      *NetworkResult      `json:"network,omitempty"`
-	TLS          *TLSResult          `json:"tls,omitempty"`
-	Certificate  *CertificateResult  `json:"certificate,omitempty"`
-	SNI          *SNIResult          `json:"sni,omitempty"`
-	CDN          *CDNResult          `json:"cdn,omitempty"`
-	Blocked      *BlockedResult      `json:"blocked,omitempty"`
-	Location     *LocationResult     `json:"location,omitempty"`
-	Summary      *DetectionSummary   `json:"summary,omitempty"`
+	Network     *NetworkResult     `json:"network,omitempty"`
+	TLS         *TLSResult         `json:"tls,omitempty"`
+	Certificate *CertificateResult `json:"certificate,omitempty"`
+	SNI         *SNIResult         `json:"sni,omitempty"`
+	CDN         *CDNResult         `json:"cdn,omitempty"`
+	PageStatus  *PageStatusResult  `json:"page_status,omitempty"`
+	Blocked     *BlockedResult     `json:"blocked,omitempty"`
+	Location    *LocationResult    `json:"location,omitempty"`
+	Summary     *DetectionSummary  `json:"summary,omitempty"`
+}
+
+// StatusCodeCategory 状态码分类常量
+const (
+	StatusCodeCategorySafe     = "safe"     // 安全状态码：200, 301, 302, 404
+	StatusCodeCategoryExcluded = "excluded" // 排除状态码：401, 403, 407, 408, 429, 5xx
+	StatusCodeCategoryNetwork  = "network"  // 网络不可达
+)
+
+// ClassifyStatusCode 分类状态码
+func ClassifyStatusCode(statusCode int, accessible bool) string {
+	if !accessible {
+		return StatusCodeCategoryNetwork
+	}
+
+	// 安全的状态码
+	switch statusCode {
+	case 200, 301, 302, 404:
+		return StatusCodeCategorySafe
+	}
+
+	// 排除的状态码
+	switch statusCode {
+	case 401, 403, 407, 408, 429:
+		return StatusCodeCategoryExcluded
+	}
+
+	// 5xx 系列
+	if statusCode >= 500 && statusCode < 600 {
+		return StatusCodeCategoryExcluded
+	}
+
+	// 其他状态码也归类为排除
+	return StatusCodeCategoryExcluded
+}
+
+// IsStatusCodeSafe 检查状态码是否安全
+func IsStatusCodeSafe(statusCode int) bool {
+	return ClassifyStatusCode(statusCode, true) == StatusCodeCategorySafe
+}
+
+// IsStatusCodeExcluded 检查状态码是否应该排除
+func IsStatusCodeExcluded(statusCode int) bool {
+	return ClassifyStatusCode(statusCode, true) == StatusCodeCategoryExcluded
 }
 
 // NetworkResult 网络检测结果
 type NetworkResult struct {
-	Accessible     bool          `json:"accessible"`
-	ResponseTime   time.Duration `json:"response_time"`
-	StatusCode     int           `json:"status_code"`
-	FinalDomain    string        `json:"final_domain"`
-	RedirectChain  []string      `json:"redirect_chain"`
-	IsRedirected   bool          `json:"is_redirected"`
-	RedirectCount  int           `json:"redirect_count"`
-	URL            string        `json:"url"`
-	HandshakeTime  time.Duration `json:"handshake_time"`
-	Headers        map[string]string `json:"headers,omitempty"` // HTTP响应头
+	Accessible         bool              `json:"accessible"`
+	ResponseTime       time.Duration     `json:"response_time"`
+	StatusCode         int               `json:"status_code"`
+	FinalDomain        string            `json:"final_domain"`
+	RedirectChain      []string          `json:"redirect_chain"`
+	IsRedirected       bool              `json:"is_redirected"`
+	RedirectCount      int               `json:"redirect_count"`
+	URL                string            `json:"url"`
+	HandshakeTime      time.Duration     `json:"handshake_time"`
+	Headers            map[string]string `json:"headers,omitempty"`             // HTTP响应头
+	CertificateIssuer  string            `json:"certificate_issuer,omitempty"`  // 证书颁发者
+	CertificateSubject string            `json:"certificate_subject,omitempty"` // 证书主题
 }
 
 // TLSResult TLS检测结果
@@ -71,12 +120,12 @@ type SNIResult struct {
 
 // CDNResult CDN检测结果
 type CDNResult struct {
-	IsCDN       bool    `json:"is_cdn"`
-	CDNProvider string  `json:"cdn_provider"`
-	Confidence  string  `json:"confidence"`
-	Evidence    string  `json:"evidence"`
+	IsCDN        bool   `json:"is_cdn"`
+	CDNProvider  string `json:"cdn_provider"`
+	Confidence   string `json:"confidence"`
+	Evidence     string `json:"evidence"`
 	IsHotWebsite bool   `json:"is_hot_website"`
-	Error       error   `json:"error,omitempty"`
+	Error        error  `json:"error,omitempty"`
 }
 
 // BlockedResult 被墙检测结果
@@ -84,6 +133,14 @@ type BlockedResult struct {
 	IsBlocked      bool     `json:"is_blocked"`
 	BlockedReasons []string `json:"blocked_reasons"`
 	MatchType      string   `json:"match_type"`
+}
+
+// PageStatusResult 页面状态检测结果
+type PageStatusResult struct {
+	StatusCode   int    `json:"status_code"`
+	IsAccessible bool   `json:"is_accessible"`
+	ResponseTime int64  `json:"response_time_ms"`
+	Error        string `json:"error,omitempty"`
 }
 
 // LocationResult 地理位置检测结果
@@ -108,27 +165,27 @@ type DetectionSummary struct {
 
 // BatchReport 批量检测报告
 type BatchReport struct {
-	StartTime        time.Time         `json:"start_time"`
-	EndTime          time.Time         `json:"end_time"`
-	TotalDuration    time.Duration     `json:"total_duration"`
+	StartTime        time.Time          `json:"start_time"`
+	EndTime          time.Time          `json:"end_time"`
+	TotalDuration    time.Duration      `json:"total_duration"`
 	Results          []*DetectionResult `json:"results"`
-	Statistics       *Statistics       `json:"statistics"`
-	PerformanceStats *PerformanceStats `json:"performance_stats"`
-	CDNStats         *CDNStats         `json:"cdn_stats"`
-	GeographicStats  *GeographicStats  `json:"geographic_stats"`
-	TLSStats         *TLSStats         `json:"tls_stats"`
-	CertificateStats *CertificateStats `json:"certificate_stats"`
-	Summary          *BatchSummary     `json:"summary"`
+	Statistics       *Statistics        `json:"statistics"`
+	PerformanceStats *PerformanceStats  `json:"performance_stats"`
+	CDNStats         *CDNStats          `json:"cdn_stats"`
+	GeographicStats  *GeographicStats   `json:"geographic_stats"`
+	TLSStats         *TLSStats          `json:"tls_stats"`
+	CertificateStats *CertificateStats  `json:"certificate_stats"`
+	Summary          *BatchSummary      `json:"summary"`
 }
 
 // Statistics 统计信息
 type Statistics struct {
-	TotalDomains    int `json:"total_domains"`
+	TotalDomains     int `json:"total_domains"`
 	SuccessfulChecks int `json:"successful_checks"`
-	FailedChecks    int `json:"failed_checks"`
-	SuitableDomains int `json:"suitable_domains"`
-	BlockedDomains  int `json:"blocked_domains"`
-	ErrorDomains    int `json:"error_domains"`
+	FailedChecks     int `json:"failed_checks"`
+	SuitableDomains  int `json:"suitable_domains"`
+	BlockedDomains   int `json:"blocked_domains"`
+	ErrorDomains     int `json:"error_domains"`
 }
 
 // PerformanceStats 性能统计
@@ -142,10 +199,10 @@ type PerformanceStats struct {
 
 // CDNStats CDN统计
 type CDNStats struct {
-	CDNDomains       int                    `json:"cdn_domains"`
-	CDNProviders     map[string]int         `json:"cdn_providers"`
-	CDNTypes         map[string]int         `json:"cdn_types"`
-	ConfidenceLevels map[string]int         `json:"confidence_levels"`
+	CDNDomains       int            `json:"cdn_domains"`
+	CDNProviders     map[string]int `json:"cdn_providers"`
+	CDNTypes         map[string]int `json:"cdn_types"`
+	ConfidenceLevels map[string]int `json:"confidence_levels"`
 }
 
 // GeographicStats 地理统计
@@ -157,28 +214,28 @@ type GeographicStats struct {
 
 // TLSStats TLS统计
 type TLSStats struct {
-	TLS13Support    int `json:"tls13_support"`
-	X25519Support   int `json:"x25519_support"`
-	HTTP2Support    int `json:"http2_support"`
+	TLS13Support     int           `json:"tls13_support"`
+	X25519Support    int           `json:"x25519_support"`
+	HTTP2Support     int           `json:"http2_support"`
 	AverageHandshake time.Duration `json:"average_handshake"`
 }
 
 // CertificateStats 证书统计
 type CertificateStats struct {
-	ValidCertificates int `json:"valid_certificates"`
+	ValidCertificates   int `json:"valid_certificates"`
 	InvalidCertificates int `json:"invalid_certificates"`
-	ExpiringSoon      int `json:"expiring_soon"`
-	AverageExpiry     int `json:"average_expiry"`
+	ExpiringSoon        int `json:"expiring_soon"`
+	AverageExpiry       int `json:"average_expiry"`
 }
 
 // BatchSummary 批量检测摘要
 type BatchSummary struct {
-	SuccessRate      float64 `json:"success_rate"`
-	SuitabilityRate  float64 `json:"suitability_rate"`
-	BlockingRate     float64 `json:"blocking_rate"`
-	CDNUsageRate     float64 `json:"cdn_usage_rate"`
-	Recommendations  []string `json:"recommendations"`
-	Warnings         []string `json:"warnings"`
+	SuccessRate     float64  `json:"success_rate"`
+	SuitabilityRate float64  `json:"suitability_rate"`
+	BlockingRate    float64  `json:"blocking_rate"`
+	CDNUsageRate    float64  `json:"cdn_usage_rate"`
+	Recommendations []string `json:"recommendations"`
+	Warnings        []string `json:"warnings"`
 }
 
 // DetectionStage 检测阶段接口
@@ -191,28 +248,29 @@ type DetectionStage interface {
 
 // PipelineContext 流水线上下文
 type PipelineContext struct {
-	Domain       string
-	StartTime    time.Time
-	Result       *DetectionResult
-	Connections  *ConnectionManager
-	Cache        *CacheManager
-	Config       *Config
-	EarlyExit    bool
-	Error        error
+	Domain      string
+	StartTime   time.Time
+	Result      *DetectionResult
+	Connections interface{} // 使用interface{}来支持不同的连接管理器类型
+	Cache       interface{} // 使用interface{}来支持不同的缓存管理器类型
+	Config      *Config
+	EarlyExit   bool
+	Error       error
+	Context     context.Context // 添加Context字段
 }
 
 // ConnectionManager 连接管理器
 type ConnectionManager struct {
-	HTTPClient *HTTPClient
-	TLSClient  *TLSClient
+	HTTPClient  *HTTPClient
+	TLSClient   *TLSClient
 	DNSResolver *DNSResolver
 }
 
 // CacheManager 缓存管理器
 type CacheManager struct {
-	DNSCache   *DNSCache
+	DNSCache    *DNSCache
 	ResultCache *ResultCache
-	CDNCache   *CDNCache
+	CDNCache    *CDNCache
 }
 
 // HTTPClient HTTP客户端
@@ -266,21 +324,21 @@ type CDNCache struct {
 
 // TLSConfig TLS配置
 type TLSConfig struct {
-	MinVersion    uint16
-	MaxVersion    uint16
-	CipherSuites  []uint16
-	ServerName    string
-	NextProtos    []string
+	MinVersion   uint16
+	MaxVersion   uint16
+	CipherSuites []uint16
+	ServerName   string
+	NextProtos   []string
 }
 
 // Config 配置结构
 type Config struct {
-	Network      NetworkConfig      `yaml:"network"`
-	TLS          TLSConfig          `yaml:"tls"`
-	Concurrency  ConcurrencyConfig  `yaml:"concurrency"`
-	Output       OutputConfig       `yaml:"output"`
-	Cache        CacheConfig        `yaml:"cache"`
-	Batch        BatchConfig        `yaml:"batch"`
+	Network     NetworkConfig     `yaml:"network"`
+	TLS         TLSConfig         `yaml:"tls"`
+	Concurrency ConcurrencyConfig `yaml:"concurrency"`
+	Output      OutputConfig      `yaml:"output"`
+	Cache       CacheConfig       `yaml:"cache"`
+	Batch       BatchConfig       `yaml:"batch"`
 }
 
 // NetworkConfig 网络配置
