@@ -137,7 +137,7 @@ go build -o reality-checker
 ./reality-checker csv file.csv
 ```
 
-**⚠️ 重要提示：**
+**重要提示：**
 - RealiTLScanner 尽量在本地运行，不要在远端
 - 多次运行RealiTLScanner时，请更改输出文件名，如：`file1.csv`、`file2.csv`、`file3.csv` 等
 - 如果使用相同的文件名，可能会导致文件导出失败或覆盖之前的扫描结果
