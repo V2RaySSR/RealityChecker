@@ -121,7 +121,7 @@ go build -o reality-checker
 
 ```bash
 # 从CSV文件批量检测域名
-./reality-checker csv domains.csv
+./reality-checker csv file.csv
 ```
 
 ### 推荐工作流程
