@@ -100,7 +100,7 @@ jobs:
           **推荐工作流程：**
           1. 使用 [RealiTLScanner](https://github.com/XTLS/RealiTLScanner) 扫描VPS IP：
              ```bash
-             ./RealiTLScanner -addr <VPS IP> -port 443 -thread 50 -timeout 5 -out file.csv
+             ./RealiTLScanner -addr <VPS IP> -port 443 -thread 10 -timeout 5 -out file.csv
              ```
           2. 使用本工具检测生成的CSV文件：
              ```bash

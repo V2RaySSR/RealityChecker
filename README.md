@@ -22,7 +22,7 @@
 
 * **Linux VPS** - 主要针对VPS环境使用
 * **Windows、macOS** - 等自行编译
-* **Go 1.21+** - 用于本地编译（可选）
+* **Go 1.21+** - 用于本地编译（Windows、macOS可选）
 
 ### 安装步骤
 
@@ -93,7 +93,7 @@ go build -o reality-checker
 
 **1. 使用RealiTLScanner扫描VPS IP：**
 ```bash
-./RealiTLScanner -addr <VPS IP> -port 443 -thread 50 -timeout 5 -out file.csv
+./RealiTLScanner -addr <VPS IP> -port 443 -thread 10 -timeout 5 -out file.csv
 ```
 
 **2. 使用本工具检测生成的CSV文件：**
@@ -111,32 +111,9 @@ go build -o reality-checker
 ./reality-checker version
 ```
 
-## ⚡ 性能特性
-
-* **多线程架构** - Worker Pool模式，高效任务分发
-* **连接池管理** - 复用TLS和HTTP连接
-* **DNS缓存** - 缓存DNS解析结果
-* **自适应速率限制** - 根据服务器响应动态调整
-* **内存监控** - 实时监控内存使用
-* **自适应并发控制** - 根据系统性能动态调整并发数
-
-## 🔧 故障排除
-
-### 常见问题
+## 🔧常见问题
 
 **1. 数据文件下载失败**
-
-程序启动时会自动下载必要的数据文件，如果下载失败，请检查网络连接：
-
-```bash
-# 检查网络连接
-curl -I https://github.com/Loyalsoldier/geoip/releases/latest/download/Country.mmdb
-curl -I https://raw.githubusercontent.com/Loyalsoldier/clash-rules/release/gfw.txt
-curl -I https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/cdn_keywords.txt
-curl -I https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/hot_websites.txt
-```
-
-**手动下载数据文件**
 
 如果自动下载失败，请手动下载以下文件到 `data/` 目录：
 
@@ -145,44 +122,42 @@ curl -I https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/hot_
 - [cdn_keywords.txt](https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/cdn_keywords.txt)
 - [hot_websites.txt](https://raw.githubusercontent.com/V2RaySSR/RealityChecker/main/data/hot_websites.txt)
 
-## 📝 检测标准
 
-### 推荐使用的网站特征
+## 📊 检测结果说明
 
-* ✅ 海外网站（非国内IP）
-* ✅ 支持TLS 1.3协议
-* ✅ 支持X25519加密算法
-* ✅ 证书SNI匹配正确
-* ✅ 未使用CDN
-* ✅ 非热门网站
-* ✅ 未被墙
+### 检测结果示例
 
-### 不推荐使用的网站特征
+以下是一个批量检测的实际输出示例：
 
-* ❌ 国内网站
-* ❌ 不支持TLS 1.3
-* ❌ 不支持X25519
-* ❌ 证书SNI不匹配
-* ❌ 使用CDN
-* ❌ 热门网站
-* ❌ 被墙网站
+```bash
+./reality-checker batch apple.com tesla.com microsoft.com
+```
 
-## 🤝 贡献指南
+**实际运行效果：**
 
-欢迎提交Issue和Pull Request！
+![RealityChecker检测结果示例](RealityChecker.png)
 
-### 贡献方式
+**只有满足Reality目标域名硬性条件的（TLS1.3、X25519、H2、SNI匹配、证书有效），才会在列表中显示**
 
-1. Fork 项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
+### CDN检测等级说明
 
-## 📞 支持与反馈
+| 等级 | 含义 | 影响 |
+|------|------|------|
+| **高** | 明确使用CDN | 可以使用，但不推荐 |
+| **中** | 疑似使用CDN | 可以使用，但不推荐 |
+| **低** | 轻微CDN特征 | 可以使用，但不推荐 |
+| **-** | 未检测到CDN | 可以使用，强烈推荐 |
 
-* **GitHub Issues**: [提交问题](https://github.com/V2RaySSR/RealityChecker/issues)
-* **讨论区**: [GitHub Discussions](https://github.com/V2RaySSR/RealityChecker/discussions)
+### 热门网站说明
+
+热门网站（如 apple.com、tesla.com、microsoft.com 等）由于使用人群多，容易被识别和封禁，因此不太推荐作为 Reality 协议的目标域名。
+
+**结果分析：**
+- 所有三个域名都支持TLS 1.3、X25519、HTTP/2和SNI匹配
+- 握手时间都很快（10-67ms），证书有效期充足
+- 都使用了CDN且为热门网站，推荐度中等（***）
+- 虽然技术指标优秀，但由于CDN和热门网站特性，推荐度有所降低
+
 
 ## 🏆 致谢
 
