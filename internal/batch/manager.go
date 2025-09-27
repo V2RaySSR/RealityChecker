@@ -165,6 +165,9 @@ func (bm *Manager) CheckDomainsWithProgress(ctx context.Context, domains []strin
 
 	// 收集结果并显示进度
 	completed := 0
+	timeout := time.NewTimer(15 * time.Second) // 添加15秒总超时
+	defer timeout.Stop()
+
 	for completed < len(domains) {
 		select {
 		case progressResult := <-resultChan:
@@ -188,6 +191,22 @@ func (bm *Manager) CheckDomainsWithProgress(ctx context.Context, domains []strin
 			}
 		case <-ctx.Done():
 			return nil, ctx.Err()
+		case <-timeout.C:
+			// 超时处理：显示未完成的域名
+			fmt.Printf("\n[%s] 检测超时，以下域名未完成检测：\n", time.Now().Format("15:04:05"))
+			for i, domain := range domains {
+				if results[i] == nil {
+					fmt.Printf("  - %s (超时)\n", domain)
+					// 创建超时结果
+					results[i] = &types.DetectionResult{
+						Domain:   domain,
+						Index:    i,
+						Suitable: false,
+						Error:    fmt.Errorf("检测超时"),
+					}
+				}
+			}
+			return results, nil
 		}
 	}
 

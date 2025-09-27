@@ -78,6 +78,9 @@ func (r *RootCmd) executeCSV(csvFile string) {
 		fmt.Printf("批量检测失败: %v\n", err)
 		return
 	}
+
+	// 显示广告
+	ui.PrintAdvertisement()
 }
 
 // extractDomainsFromCSV 从CSV记录中提取域名

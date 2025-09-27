@@ -40,6 +40,9 @@ func (r *RootCmd) executeCheck(domain string) {
 	cfg, _ := config.LoadConfig("")
 	formatter := report.NewFormatter(cfg)
 	fmt.Printf("\n%s", formatter.FormatSingleResult(result))
+
+	// 显示广告
+	ui.PrintAdvertisement()
 }
 
 // isValidDomain 验证域名格式是否有效

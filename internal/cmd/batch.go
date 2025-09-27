@@ -73,6 +73,9 @@ func (r *RootCmd) executeBatch(domainsStr string) {
 	}
 
 	// 详细结果已在batch manager中打印，无需重复
+
+	// 显示广告
+	ui.PrintAdvertisement()
 }
 
 // parseDomains 解析域名列表，返回有效域名、无效域名和重复域名
